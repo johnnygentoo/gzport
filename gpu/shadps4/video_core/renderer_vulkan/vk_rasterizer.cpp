@@ -1698,8 +1698,8 @@ void Rasterizer::DrawRecord(const GraphicsPipeline* pipeline, const PreparedDraw
             if (resource.IsSpecial()) continue;
             const auto buffer = resource.GetSharp(vs);
             const u32 size = buffer.GetSize();
-            if (!buffer.Valid() || buffer.GetStride() != 16) continue;
-            const auto role = Motion::ClassifyBuffer(size);
+            if (!buffer.Valid()) continue;
+            const auto role = CameraMotion::MotionBuffer(size, buffer.GetStride());
             if (role == Motion::BufferRole::Skeleton) {
                 gated = false;
                 break;

@@ -57,6 +57,9 @@ constexpr UpscalerHooks Hooks = {
     // the finished frame that the next frame's first pass puts into the display buffer.
     .scene_done_vertex_shader = 0x6fbcebea,
     .frame_copy_vertex_shader = 0x2ccea2b7,
+    // Skinned models (Godzilla, kaiju, people) bind 4x4 bone matrices: 4032 bytes for Godzilla's
+    // 63 bones. World pieces bind 208 bytes of 16-byte rows, and all bind the 336-byte camera.
+    .bone_palette_stride = 64,
 };
 } // namespace
 

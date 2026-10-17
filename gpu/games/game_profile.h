@@ -54,6 +54,9 @@ struct UpscalerHooks {
     /// The vertex shader of a pass copying the finished frame (scene and HUD) into another image
     /// the display pass reads later: that image is kept at the output size (a relay).
     std::uint64_t frame_copy_vertex_shader = 0;
+    /// The stride of the vertex shaders' bone palettes (one matrix per bone): draws binding one
+    /// write object motion vectors. 0: Bloodborne's rule (16-byte rows, sized as its palettes).
+    std::uint32_t bone_palette_stride = 0;
 };
 
 struct Profile {

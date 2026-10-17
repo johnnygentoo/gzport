@@ -28,6 +28,7 @@
 #include "video_core/cache_storage.h"
 #include "video_core/renderer_vulkan/liverpool_to_vk.h"
 #include "video_core/renderer_vulkan/motion_history.h"
+#include "video_core/renderer_vulkan/vk_camera_motion.h"
 #include "video_core/renderer_vulkan/vk_draw_prep.h"
 #include "video_core/renderer_vulkan/vk_instance.h"
 #include "video_core/renderer_vulkan/vk_pipeline_serialization.h"
@@ -836,11 +837,21 @@ bool PipelineCache::RefreshGraphicsKey(PipelineSelection& sel) {
         for (s32 cb = 0; cb < AmdGpu::NUM_COLOR_BUFFERS && !skip_cb_binding; ++cb) {
             bound += (regs.color_buffers[cb] && regs.color_target_mask.GetMask(cb)) ? 1 : 0;
         }
-        motion_possible = Shader::MotionVectors::positions_address != 0 && bound >= 5 &&
+        // gzport: the scene pass's targets as the game profile names them (a forward renderer
+        // draws its scene into one).
+        motion_possible = Shader::MotionVectors::positions_address != 0 &&
+                          bound >= CameraMotion::ScenePassTargets() &&
                           !regs.color_buffers[Shader::MotionVectors::Output] &&
                           regs.depth_buffer.DepthValid() &&
                           regs.depth_buffer.NumSamples() == 1 && !regs.IsClipDisabled() &&
                           regs.stage_enable.raw == AmdGpu::ShaderStageEnable::VgtStages::Vs;
+        // A forward renderer's scene pass draws its effects too: only opaque draws (depth
+        // written, no blending) write motion, not smoke and sparks over the models behind.
+        if (CameraMotion::ScenePassTargets() < 5) {
+            motion_possible = motion_possible && regs.depth_control.depth_write_enable &&
+                              !(regs.blend_control[0].enable &&
+                                !regs.color_buffers[0].info.blend_bypass);
+        }
     }
     sel.motion = false;
 
@@ -882,8 +893,9 @@ bool PipelineCache::RefreshGraphicsKey(PipelineSelection& sel) {
             for (const auto& resource : vs->buffers) {
                 if (resource.IsSpecial()) continue;
                 const auto buffer = resource.GetSharp(*vs);
-                if (buffer.Valid() && buffer.GetStride() == 16 &&
-                    Motion::ClassifyBuffer(buffer.GetSize()) != Motion::BufferRole::Other) {
+                if (buffer.Valid() &&
+                    CameraMotion::MotionBuffer(buffer.GetSize(), buffer.GetStride()) !=
+                        Motion::BufferRole::Other) {
                     sel.motion = true;
                     break;
                 }

@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "common/types.h"
+#include "video_core/renderer_vulkan/motion_history.h"
 #include "video_core/renderer_vulkan/vk_common.h"
 #include "video_core/buffer_cache/buffer.h"
 #include "video_core/texture_cache/image.h"
@@ -87,6 +88,17 @@ public:
         } else if (size == 864) {
             OnConstants(data);
         }
+    }
+    /// What a vertex shader's buffer of `size` bytes and `stride` is to object motion: a game
+    /// profile with its own bone palettes names their stride (its camera block is not one).
+    [[nodiscard]] static Motion::BufferRole MotionBuffer(u32 size, u32 stride) noexcept {
+        const Game::UpscalerHooks* hooks = Game::Upscaler();
+        if (hooks && hooks->bone_palette_stride) {
+            return stride == hooks->bone_palette_stride && size >= stride && size % stride == 0
+                       ? Motion::BufferRole::Skeleton
+                       : Motion::BufferRole::Other;
+        }
+        return stride == 16 ? Motion::ClassifyBuffer(size) : Motion::BufferRole::Other;
     }
     /// The color targets a pass needs for its depth to be the scene depth.
     [[nodiscard]] static u32 ScenePassTargets() noexcept {
