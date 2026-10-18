@@ -63,6 +63,10 @@
 
 #include "bbnet.h"
 
+namespace Libraries::Rudp {
+void RegisterLib(Core::Loader::SymbolsResolver* sym); // rudp.cpp
+}
+
 namespace {
 /// The runtime's side (bbnet_init).
 BbNetHost g_host{};
@@ -510,6 +514,7 @@ extern "C" __attribute__((visibility("default"))) int bbnet_init(const BbNetHost
     Libraries::Np::NpTus::RegisterLib(sym);
     Libraries::Np::NpWebApi::RegisterLib(sym);
     Libraries::Np::NpWebApi2::RegisterLib(sym);
+    Libraries::Rudp::RegisterLib(sym);
     std::printf("Online: %zu network and PSN functions\n", g_symbols.size());
     return 0;
 }

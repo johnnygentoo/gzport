@@ -27,9 +27,9 @@ int runtime_net_enabled(void) {
     return enabled;
 }
 
-/* Imports the module answers: network, HTTP/SSL and NP, except what stays in the runtime. */
+/* Imports the module answers: network, HTTP/SSL, NP and Rudp, except what stays in the runtime. */
 int runtime_net_symbol(const char *symbol) {
-    static const char *const online[]={"sceNet","sceNp","sceHttp","sceSsl"};
+    static const char *const online[]={"sceNet","sceNp","sceHttp","sceSsl","sceRudp"};
     static const char *const local[]={"sceNpTrophy","sceNpCommerce","sceNpProfileDialog"};
     if (!symbol) return 0;
     int match=0;
