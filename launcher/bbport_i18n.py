@@ -743,6 +743,16 @@ EN = {
         'Could not save {}',
     'Текущие настройки сохранены как ваши по умолчанию':
         'Current settings saved as your defaults',
+    # Online page (LAN versus)
+    "Версус по локальной сети: VS MODE в меню «Онлайн» игры, через ваш сервер shadNet (shadnet-p2p с патчем gzport). У каждого игрока своя учётная запись на этом сервере": "Versus over the local network: VS MODE in the game's Online menu, through your own shadNet server (shadnet-p2p with the gzport patch). Every player has an account of their own on that server",
+    "Как настроить версус по сети": "How to set up versus over the network",
+    "Имя учётной записи на сервере shadNet (оно же ваше имя в игре) и её пароль. Пароль хранится на этом компьютере вместе с настройками лаунчера": "Your account name on the shadNet server (also your name in the game) and its password. The password is saved on this computer with the launcher settings",
+    "Порт P2P (UDP)": "P2P port (UDP)",
+    "Через него игроки соединяются напрямую; он должен быть открыт между компьютерами": "Players connect to each other directly through it; it must be open between the computers",
+    "Укажите адрес сервера": "Enter the server address",
+    "UDP сервера shadNet": "shadNet server UDP",
+    "отвечает; сервер видит этот компьютер как {}": "answers; the server sees this computer as {}",
+    "не отвечает: матч не соединится": "no answer: the match will not connect",
 }
 
 PT_BR = {
@@ -1540,6 +1550,16 @@ PT_BR = {
         'Não foi possível salvar {}',
     'Текущие настройки сохранены как ваши по умолчанию':
         'Configurações atuais salvas como seus padrões',
+    # Online page (LAN versus)
+    "Версус по локальной сети: VS MODE в меню «Онлайн» игры, через ваш сервер shadNet (shadnet-p2p с патчем gzport). У каждого игрока своя учётная запись на этом сервере": "Versus pela rede local: VS MODE no menu «Online» do jogo, pelo seu próprio servidor shadNet (shadnet-p2p com o patch do gzport). Cada jogador tem sua própria conta nesse servidor",
+    "Как настроить версус по сети": "Como configurar o versus em rede",
+    "Имя учётной записи на сервере shadNet (оно же ваше имя в игре) и её пароль. Пароль хранится на этом компьютере вместе с настройками лаунчера": "O nome da sua conta no servidor shadNet (também o seu nome no jogo) e a senha dela. A senha fica salva neste computador com as configurações do launcher",
+    "Порт P2P (UDP)": "Porta P2P (UDP)",
+    "Через него игроки соединяются напрямую; он должен быть открыт между компьютерами": "Os jogadores se conectam diretamente por ela; ela precisa estar aberta entre os computadores",
+    "Укажите адрес сервера": "Informe o endereço do servidor",
+    "UDP сервера shadNet": "UDP do servidor shadNet",
+    "отвечает; сервер видит этот компьютер как {}": "responde; o servidor vê este computador como {}",
+    "не отвечает: матч не соединится": "sem resposta: a partida não vai se conectar",
 }
 
 
@@ -2248,6 +2268,16 @@ ES = {
         'No se pudo guardar {}',
     'Текущие настройки сохранены как ваши по умолчанию':
         'Ajustes actuales guardados como tus valores predeterminados',
+    # Online page (LAN versus)
+    "Версус по локальной сети: VS MODE в меню «Онлайн» игры, через ваш сервер shadNet (shadnet-p2p с патчем gzport). У каждого игрока своя учётная запись на этом сервере": "Versus por la red local: VS MODE en el menú «Online» del juego, a través de tu propio servidor shadNet (shadnet-p2p con el parche de gzport). Cada jugador tiene su propia cuenta en ese servidor",
+    "Как настроить версус по сети": "Cómo configurar el versus en red",
+    "Имя учётной записи на сервере shadNet (оно же ваше имя в игре) и её пароль. Пароль хранится на этом компьютере вместе с настройками лаунчера": "El nombre de tu cuenta en el servidor shadNet (también tu nombre en el juego) y su contraseña. La contraseña se guarda en este ordenador con los ajustes del lanzador",
+    "Порт P2P (UDP)": "Puerto P2P (UDP)",
+    "Через него игроки соединяются напрямую; он должен быть открыт между компьютерами": "Los jugadores se conectan directamente a través de él; debe estar abierto entre los ordenadores",
+    "Укажите адрес сервера": "Introduce la dirección del servidor",
+    "UDP сервера shadNet": "UDP del servidor shadNet",
+    "отвечает; сервер видит этот компьютер как {}": "responde; el servidor ve este ordenador como {}",
+    "не отвечает: матч не соединится": "no responde: la partida no se conectará",
 }
 
 
@@ -2956,6 +2986,16 @@ IT = {
         'Impossibile salvare {}',
     'Текущие настройки сохранены как ваши по умолчанию':
         'Impostazioni attuali salvate come tuoi predefiniti',
+    # Online page (LAN versus)
+    "Версус по локальной сети: VS MODE в меню «Онлайн» игры, через ваш сервер shadNet (shadnet-p2p с патчем gzport). У каждого игрока своя учётная запись на этом сервере": "Versus sulla rete locale: VS MODE nel menu «Online» del gioco, tramite il tuo server shadNet (shadnet-p2p con la patch di gzport). Ogni giocatore ha un proprio account su quel server",
+    "Как настроить версус по сети": "Come configurare il versus in rete",
+    "Имя учётной записи на сервере shadNet (оно же ваше имя в игре) и её пароль. Пароль хранится на этом компьютере вместе с настройками лаунчера": "Il nome del tuo account sul server shadNet (anche il tuo nome nel gioco) e la sua password. La password è salvata su questo computer con le impostazioni del launcher",
+    "Порт P2P (UDP)": "Porta P2P (UDP)",
+    "Через него игроки соединяются напрямую; он должен быть открыт между компьютерами": "I giocatori si collegano direttamente attraverso di essa; deve essere aperta tra i computer",
+    "Укажите адрес сервера": "Inserisci l'indirizzo del server",
+    "UDP сервера shadNet": "UDP del server shadNet",
+    "отвечает; сервер видит этот компьютер как {}": "risponde; il server vede questo computer come {}",
+    "не отвечает: матч не соединится": "nessuna risposta: la partita non si collegherà",
 }
 
 
@@ -3664,6 +3704,16 @@ FR = {
         "Impossible d'enregistrer {}",
     'Текущие настройки сохранены как ваши по умолчанию':
         'Réglages actuels enregistrés comme vos valeurs par défaut',
+    # Online page (LAN versus)
+    "Версус по локальной сети: VS MODE в меню «Онлайн» игры, через ваш сервер shadNet (shadnet-p2p с патчем gzport). У каждого игрока своя учётная запись на этом сервере": "Versus en réseau local : VS MODE dans le menu « Online » du jeu, via votre propre serveur shadNet (shadnet-p2p avec le correctif gzport). Chaque joueur a son propre compte sur ce serveur",
+    "Как настроить версус по сети": "Configurer le versus en réseau",
+    "Имя учётной записи на сервере shadNet (оно же ваше имя в игре) и её пароль. Пароль хранится на этом компьютере вместе с настройками лаунчера": "Le nom de votre compte sur le serveur shadNet (c'est aussi votre nom dans le jeu) et son mot de passe. Le mot de passe est enregistré sur cet ordinateur avec les réglages du lanceur",
+    "Порт P2P (UDP)": "Port P2P (UDP)",
+    "Через него игроки соединяются напрямую; он должен быть открыт между компьютерами": "Les joueurs se connectent directement par ce port ; il doit être ouvert entre les ordinateurs",
+    "Укажите адрес сервера": "Indiquez l'adresse du serveur",
+    "UDP сервера shadNet": "UDP du serveur shadNet",
+    "отвечает; сервер видит этот компьютер как {}": "répond ; le serveur voit cet ordinateur comme {}",
+    "не отвечает: матч не соединится": "pas de réponse : la partie ne se connectera pas",
 }
 
 
@@ -4372,6 +4422,16 @@ DE = {
         '{} konnte nicht gespeichert werden',
     'Текущие настройки сохранены как ваши по умолчанию':
         'Aktuelle Einstellungen als Ihre Standardwerte gespeichert',
+    # Online page (LAN versus)
+    "Версус по локальной сети: VS MODE в меню «Онлайн» игры, через ваш сервер shadNet (shadnet-p2p с патчем gzport). У каждого игрока своя учётная запись на этом сервере": "Versus im lokalen Netzwerk: VS MODE im „Online“-Menü des Spiels, über deinen eigenen shadNet-Server (shadnet-p2p mit dem gzport-Patch). Jeder Spieler hat ein eigenes Konto auf diesem Server",
+    "Как настроить версус по сети": "Versus im Netzwerk einrichten",
+    "Имя учётной записи на сервере shadNet (оно же ваше имя в игре) и её пароль. Пароль хранится на этом компьютере вместе с настройками лаунчера": "Dein Kontoname auf dem shadNet-Server (zugleich dein Name im Spiel) und sein Passwort. Das Passwort wird auf diesem Computer mit den Launcher-Einstellungen gespeichert",
+    "Порт P2P (UDP)": "P2P-Port (UDP)",
+    "Через него игроки соединяются напрямую; он должен быть открыт между компьютерами": "Darüber verbinden sich die Spieler direkt; er muss zwischen den Computern offen sein",
+    "Укажите адрес сервера": "Gib die Serveradresse ein",
+    "UDP сервера shadNet": "UDP des shadNet-Servers",
+    "отвечает; сервер видит этот компьютер как {}": "antwortet; der Server sieht diesen Computer als {}",
+    "не отвечает: матч не соединится": "keine Antwort: das Match wird sich nicht verbinden",
 }
 
 
@@ -5023,6 +5083,16 @@ ZH_CN = {
         '无法保存 {}',
     'Текущие настройки сохранены как ваши по умолчанию':
         '当前设置已保存为您的默认设置',
+    # Online page (LAN versus)
+    "Версус по локальной сети: VS MODE в меню «Онлайн» игры, через ваш сервер shadNet (shadnet-p2p с патчем gzport). У каждого игрока своя учётная запись на этом сервере": "局域网对战：游戏「Online」菜单中的 VS MODE，通过你自己的 shadNet 服务器（带 gzport 补丁的 shadnet-p2p）。每位玩家在该服务器上都有自己的账户",
+    "Как настроить версус по сети": "如何设置联网对战",
+    "Имя учётной записи на сервере shadNet (оно же ваше имя в игре) и её пароль. Пароль хранится на этом компьютере вместе с настройками лаунчера": "你在 shadNet 服务器上的账户名（也是你在游戏中的名字）及其密码。密码与启动器设置一起保存在这台电脑上",
+    "Порт P2P (UDP)": "P2P 端口（UDP）",
+    "Через него игроки соединяются напрямую; он должен быть открыт между компьютерами": "玩家通过它直接相连；它必须在各电脑之间开放",
+    "Укажите адрес сервера": "请输入服务器地址",
+    "UDP сервера shadNet": "shadNet 服务器 UDP",
+    "отвечает; сервер видит этот компьютер как {}": "有响应；服务器看到这台电脑为 {}",
+    "не отвечает: матч не соединится": "无响应：对战将无法连接",
 }
 
 # Translations by language code; Russian is the key itself. Strings missing in a translation

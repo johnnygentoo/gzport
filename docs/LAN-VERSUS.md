@@ -40,6 +40,9 @@ signaling) and sends the match over libSceRudp on a P2P socket (vport 778). Here
    (`BB_GAME_DIR` and `BB_CONFIG` as usual.) The P2P port (UDP 3658) must be open between the
    PCs; on one network nothing else is needed.
 
+The launcher's **Online** page does step 3 for you: turn on *Play online*, enter the server and your
+account, and *Test the connection*.
+
 Then **Online → VS MODE → random search** on every PC: the first one creates the room, the
 others join it, everyone confirms, and the match starts by itself.
 

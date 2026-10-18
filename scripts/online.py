@@ -318,7 +318,9 @@ def proto_string(field, text):
             return bytes([field << 3 | 2]) + bytes(varint) + data
 
 
-def shadnet_login(host, port, npid, password, timeout=6.0):
+# A server's sign-in can take seconds: shadnet-p2p checks the password with a slow hash (about
+# 7 s on a home server).
+def shadnet_login(host, port, npid, password, timeout=20.0):
     """Signs in to a shadNet server as the game does and leaves at once: (ok, detail), detail an
     entry of LOGIN_ERRORS, 'protocol vN' or the socket error."""
     def receive(sock, size):
@@ -352,6 +354,70 @@ def shadnet_login(host, port, npid, password, timeout=6.0):
             if kind == 1 and command == 0:
                 error = payload[0] if payload else 1
                 return error == 0, LOGIN_ERRORS.get(error, f'code {error}') if error else ''
+
+
+# GODZILLA's versus over the LAN (docs/LAN-VERSUS.md): a shadNet server of the players' own with
+# tools/shadnet-server/godzilla-versus.patch, no community server, no UPnP. The game's P2P sockets
+# go through this UDP port; pinned, so that it can be opened between the PCs.
+LAN_P2P_PORT = 3658
+
+
+def lan_server(settings):
+    """The LAN server as host:port (shadNet's 31313 when no port is given), '' when unset."""
+    server = str(settings.get('online_server') or '').strip()
+    if server and ':' not in server:
+        server += ':31313'
+    return server
+
+
+def lan_environment(settings):
+    """The game's online variables for GODZILLA's LAN versus. The online ID is also the name the
+    game shows for the player (BB_USER_NAME)."""
+    server = lan_server(settings)
+    host = server.rsplit(':', 1)[0]
+    npid = str(settings.get('online_npid') or '').strip()
+    port = int(settings.get('online_p2p_port') or LAN_P2P_PORT)
+    env = {
+        'BB_ONLINE': '1',
+        'BB_SHADNET_SERVER': server,
+        'BB_SHADNET_WEBAPI': f'http://{host}:31315',
+        'BB_SHADNET_NPID': npid,
+        'BB_SHADNET_PASSWORD': settings.get('online_password') or '',
+        'BB_UPNP': '0',
+        'SHADPS4_P2P_PORT': str(port if 0 < port < 65536 else LAN_P2P_PORT),
+    }
+    if npid:
+        env['BB_USER_NAME'] = npid
+    return env
+
+
+def lan_check(server, account=None):
+    """(name, address, ok, detail) for the LAN server: its TCP port ('shadnet'), its UDP port
+    ('stun', detail: this PC's address as the server sees it, or 'timeout') and, with account
+    (npid, password), the sign-in ('login', detail as in check())."""
+    results = []
+    host, _sep, port = server.rpartition(':')
+    host = host or server
+    try:
+        socket.create_connection((host, int(port or 31313)), timeout=4).close()
+        results.append(('shadnet', server, True, ''))
+    except (OSError, ValueError) as error:
+        results.append(('shadnet', server, False, str(error)))
+    try:
+        public, public_port = stun_ping(host)
+        results.append(('stun', f'{host}:{STUN_PORT}', True, f'{public}:{public_port}'))
+    except TimeoutError:
+        results.append(('stun', f'{host}:{STUN_PORT}', False, 'timeout'))
+    except OSError as error:
+        results.append(('stun', f'{host}:{STUN_PORT}', False, str(error)))
+    npid, password = account or ('', '')
+    if npid and password and results[0][2]:
+        try:
+            ok, detail = shadnet_login(host, int(port or 31313), npid, password)
+            results.append(('login', npid, ok, detail))
+        except (OSError, ValueError) as error:
+            results.append(('login', npid, False, str(error)))
+    return results
 
 
 def check(server, webapi, community, account=None):

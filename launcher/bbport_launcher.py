@@ -49,6 +49,7 @@ PORT_DIR = Path(__file__).resolve().parent.parent  # native_probe (or the packag
 sys.path.insert(0, str(PORT_DIR / 'scripts'))
 from prepare import sfo  # noqa: E402
 import game_check  # noqa: E402
+import online  # noqa: E402
 import save_import  # noqa: E402
 from patches import APP_VERSION as PATCH_APP_VERSION, BUILTIN_XML, FPS_PRESETS  # noqa: E402
 from patches import EFFECTS as PATCH_EFFECTS, external_patches  # noqa: E402
@@ -175,6 +176,13 @@ DEFAULTS = {
     "extra_env": "",
     # The PS4's trophy key (shadPS4's TrophyKey): the trophies' names (scripts/trophies.py).
     "trophy_key": "",
+    # Online page: versus over the LAN through a shadNet server of the players' own
+    # (docs/LAN-VERSUS.md); off by default.
+    "online": False,
+    "online_server": "",
+    "online_npid": "",
+    "online_password": "",
+    "online_p2p_port": online.LAN_P2P_PORT,
 }
 
 # bbport.ini keys the launcher edits; the rest of the file is kept.
@@ -196,7 +204,8 @@ INI_DEFAULTS = {
     **{key: "1" if default else "0" for key, _, default in GAME_PATCHES},
 }
 # Kept when the built-in defaults are restored (no defaults.json): where the player's things are.
-KEPT_ON_BUILTIN_RESTORE = ("game_dir", "user_dir", "dlc_dir", "patches_dir", "trophy_key")
+KEPT_ON_BUILTIN_RESTORE = ("game_dir", "user_dir", "dlc_dir", "patches_dir", "trophy_key",
+                           "online_server", "online_npid", "online_password")
 
 
 def load_settings():
@@ -211,7 +220,7 @@ def load_settings():
 def save_settings(settings):
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     CONFIG_FILE.touch(mode=0o600)
-    CONFIG_FILE.chmod(0o600)  # it holds the trophy key
+    CONFIG_FILE.chmod(0o600)  # it holds the trophy key and the online password
     CONFIG_FILE.write_text(json.dumps(settings, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
@@ -359,6 +368,14 @@ def pkg_extractor():
     return shutil.which("pkgextract")
 
 
+def online_module():
+    """The online module beside the GPU library (gpu/bbnet; a build without its libraries has none),
+    or BB_NET_MODULE (the AppImage's copy)."""
+    if os.environ.get("BB_NET_MODULE"):
+        return Path(os.environ["BB_NET_MODULE"]).is_file()
+    return (binaries_dir() / "gpu" / "libbbnet.so").is_file()
+
+
 def game_environment(s):
     """Environment for run.sh from the launcher settings."""
     env = dict(os.environ)
@@ -420,6 +437,8 @@ def game_environment(s):
         env["BB_VK_VALIDATION"] = "1"
     if s.get("trophy_key", "").strip():
         env["BB_TROPHY_KEY"] = s["trophy_key"].strip()
+    if s.get("online") and online.lan_server(s) and online_module():
+        env.update(online.lan_environment(s))
     for item in s["extra_env"].split():
         if "=" in item:
             key, value = item.split("=", 1)
@@ -671,6 +690,8 @@ class LauncherWindow(Adw.ApplicationWindow):
         log_text = self.log_text() if hasattr(self, "log_view") else ""
         self.stack.add_titled_with_icon(self.build_settings_page(), "settings", tr("Настройки"),
                                         "preferences-system-symbolic")
+        self.stack.add_titled_with_icon(self.build_online_page(), "online", tr("Онлайн"),
+                                        "network-workgroup-symbolic")
         self.stack.add_titled_with_icon(self.build_trophies_page(), "trophies", tr("Трофеи"),
                                         "starred-symbolic")
         self.stack.connect("notify::visible-child-name", lambda *_: self.stack.get_visible_child_name()
@@ -1467,6 +1488,7 @@ class LauncherWindow(Adw.ApplicationWindow):
         s["vk_validation"] = self.validation_row.get_active()
         s["extra_env"] = self.extra_row.get_text().strip()
         s["trophy_key"] = self.trophy_key_row.get_text().strip()
+        s.update(self.online_settings())
         self.save_patch_profile()
         save_settings(s)
         self.ini.update({
@@ -1726,6 +1748,112 @@ class LauncherWindow(Adw.ApplicationWindow):
             self.refresh_patches()
             self.store()
         self.choose_folder(tr("Папка патчей"), patches_dir(self.settings), chosen)
+
+    # --- online page ---------------------------------------------------------------------
+
+    def build_online_page(self):
+        s = self.settings
+        page = Adw.PreferencesPage()
+        play = Adw.PreferencesGroup(description=tr(
+            "Версус по локальной сети: VS MODE в меню «Онлайн» игры, через ваш сервер shadNet "
+            "(shadnet-p2p с патчем gzport). У каждого игрока своя учётная запись на этом сервере"))
+        self.online_row = Adw.SwitchRow(title=tr("Играть онлайн"),
+                                        subtitle=tr("Выключено: игра остаётся офлайн, как раньше"),
+                                        active=s["online"])
+        play.add(self.online_row)
+        if not online_module():
+            self.online_row.set_sensitive(False)
+            self.online_row.set_subtitle(tr("Эта сборка без модуля онлайна (libbbnet.so): игра только офлайн"))
+        guide = Adw.ActionRow(title=tr("Как настроить версус по сети"), subtitle="docs/LAN-VERSUS.md",
+                              activatable=True)
+        guide.add_suffix(Gtk.Image(icon_name="adw-external-link-symbolic"))
+        guide.connect("activated", lambda _row: self.open_uri((PORT_DIR / "docs" / "LAN-VERSUS.md").as_uri()))
+        play.add(guide)
+        page.add(play)
+
+        server = Adw.PreferencesGroup(title=tr("Сервер shadNet"))
+        self.server_row = Adw.EntryRow(title=tr("Адрес сервера (host:port)"), text=s["online_server"])
+        server.add(self.server_row)
+        page.add(server)
+
+        account = Adw.PreferencesGroup(
+            title=tr("Учётная запись"),
+            description=tr("Имя учётной записи на сервере shadNet (оно же ваше имя в игре) и её "
+                           "пароль. Пароль хранится на этом компьютере вместе с настройками лаунчера"))
+        self.npid_row = Adw.EntryRow(title="Online ID", text=s["online_npid"])
+        self.password_row = Adw.PasswordEntryRow(title=tr("Пароль"), text=s["online_password"])
+        account.add(self.npid_row)
+        account.add(self.password_row)
+        page.add(account)
+
+        connection = Adw.PreferencesGroup(title=tr("Соединение"))
+        self.p2p_port_row = Adw.SpinRow.new_with_range(1, 65535, 1)
+        self.p2p_port_row.set_title(tr("Порт P2P (UDP)"))
+        self.p2p_port_row.set_subtitle(tr("Через него игроки соединяются напрямую; он должен быть "
+                                          "открыт между компьютерами"))
+        self.p2p_port_row.set_value(int(s["online_p2p_port"] or online.LAN_P2P_PORT))
+        connection.add(self.p2p_port_row)
+        test = Adw.ActionRow(title=tr("Проверить соединение"))
+        self.test_button = Gtk.Button(label=tr("Проверить"), valign=Gtk.Align.CENTER)
+        self.test_button.connect("clicked", self.on_test_connection)
+        test.add_suffix(self.test_button)
+        connection.add(test)
+        self.test_rows = []
+        self.connection_group = connection
+        page.add(connection)
+        return page
+
+    def online_settings(self):
+        """The Online page's settings (the keys of DEFAULTS)."""
+        return {
+            "online": self.online_row.get_active(),
+            "online_server": self.server_row.get_text().strip(),
+            "online_npid": self.npid_row.get_text().strip(),
+            "online_password": self.password_row.get_text(),
+            "online_p2p_port": int(self.p2p_port_row.get_value()),
+        }
+
+    def on_test_connection(self, _button):
+        server = online.lan_server(self.online_settings())
+        if not server:
+            self.alert(tr("Проверить соединение"), tr("Укажите адрес сервера"))
+            return
+        names = {"shadnet": tr("Сервер shadNet"), "stun": tr("UDP сервера shadNet"),
+                 "login": tr("Вход в shadNet")}
+        login_errors = {"wrong name or password": tr("неверное имя или пароль"),
+                        "no such account": tr("такой учётной записи нет на этом сервере"),
+                        "already signed in": tr("эта учётная запись уже в сети (игра запущена?)")}
+        account = (self.npid_row.get_text().strip(), self.password_row.get_text())
+        for row in self.test_rows:
+            self.connection_group.remove(row)
+        self.test_rows = []
+        self.test_button.set_sensitive(False)
+        self.test_button.set_label(tr("Проверка…"))
+
+        def show(results):
+            for name, address, ok, detail in results:
+                if name == "stun":
+                    status = (tr("отвечает; сервер видит этот компьютер как {}").format(detail) if ok
+                              else tr("не отвечает: матч не соединится") if detail == "timeout"
+                              else f'{tr("недоступен")} ({detail})')
+                elif name == "login":
+                    status = tr("вход выполнен") if ok else login_errors.get(
+                        detail, tr("вход не удался ({})").format(detail))
+                else:
+                    status = tr("доступен") if ok else f'{tr("недоступен")} ({detail})'
+                # Plain text: an error message is not Pango markup.
+                row = Adw.ActionRow(title=GLib.markup_escape_text(f"{names[name]}: {address}"),
+                                    subtitle=GLib.markup_escape_text(status))
+                row.add_prefix(Gtk.Image(icon_name="object-select-symbolic" if ok else "dialog-warning-symbolic"))
+                self.connection_group.add(row)
+                self.test_rows.append(row)
+            self.test_button.set_sensitive(True)
+            self.test_button.set_label(tr("Проверить"))
+            return False
+
+        def work():
+            GLib.idle_add(show, online.lan_check(server, account))
+        threading.Thread(target=work, daemon=True).start()
 
     # --- about page ----------------------------------------------------------------------
 

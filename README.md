@@ -63,8 +63,11 @@ The runtime implements the PS4 libraries GODZILLA uses that Bloodborne does not:
 - **Add to Steam** in one click (native or Flatpak Steam).
 - **Third-party patches** in shadPS4's XML format for version 01.01, from a patches folder.
 - **AppImage:** one file with everything inside, for any distribution and the Steam Deck.
+- **Versus over the LAN:** the game's online VS MODE between PCs on one network, through a shadNet
+  server of your own; the launcher's **Online** page holds the server and your account
+  ([docs/LAN-VERSUS.md](docs/LAN-VERSUS.md)).
 
-Not carried over from bloodborne_linux: online play (The Hunter's Dream, bbbridge, shadNet), the
+Not carried over from bloodborne_linux: Bloodborne's online play (The Hunter's Dream, bbbridge), the
 cheats page, Bloodborne's button prompts and gestures menu, loose-file mods, the self-updater and
 Discord status with Yharnam's areas. Discord Rich Presence is still there, off: set `BB_DISCORD=1`
 and `BB_DISCORD_CLIENT_ID` (a Discord application of your own named GODZILLA) to turn it on.
