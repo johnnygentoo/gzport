@@ -32,7 +32,7 @@ index e7a9133..f3091a8 100644
      void ResetMatchingRoomState(uint64_t roomId);
      void GetSelfSignalingAddr(QString& addr, uint16_t& port) const;
 diff --git a/src/cmd_matching.cpp b/src/cmd_matching.cpp
-index eb997e5..cfd196e 100644
+index eb997e5..806506f 100644
 --- a/src/cmd_matching.cpp
 +++ b/src/cmd_matching.cpp
 @@ -464,6 +464,7 @@ ErrorType ClientSession::CmdCreateRoom(StreamExtractor& data, QByteArray& reply)
@@ -56,7 +56,7 @@ index eb997e5..cfd196e 100644
          qInfo() << "SetRoomDataInternal: room=" << roomId << "flags=" << Qt::hex << newFlags
                  << "binAttrs=" << req.bin_attrs_size();
 +        for (const auto& slot : updatedSlots)
-+            qInfo() << "  attr" << Qt::hex << slot.attrId << "data=" << slot.data.toHex();
++            qDebug() << "  attr" << Qt::hex << slot.attrId << "data=" << slot.data.toHex();
      }
  
 -    // Broadcast UpdatedRoomDataInternal to all other members (0x1106)
@@ -125,8 +125,8 @@ index eb997e5..cfd196e 100644
 +        memberPb = BuildRoomMemberData(*target);
 +        qInfo() << "SetRoomMemberDataInternal: room=" << roomId << "member=" << target->memberId
 +                << "by" << m_info.npid << "flags=" << Qt::hex << target->flagAttr
-+                << "binAttrs=" << req.bin_attrs_size()
-+                << "data=" << target->memberBinAttr.data.toHex();
++                << "binAttrs=" << req.bin_attrs_size();
++        qDebug() << "  member data=" << target->memberBinAttr.data.toHex();
 +    }
 +
 +    // UpdatedRoomMemberDataInternal (0x1107) to every member, the sender too: the sender's own
