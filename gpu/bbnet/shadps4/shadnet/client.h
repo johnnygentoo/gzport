@@ -96,6 +96,7 @@ enum class CommandType : u16 {
     GetUserInfoList = 113,
     GetRoomMemberDataExternalList = 114,
     SendRoomMessage = 115,
+    SetRoomMemberDataInternal = 116,
 };
 
 enum class NotificationType : u16 {

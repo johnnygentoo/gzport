@@ -1,5 +1,6 @@
 // bbport: replaces shadPS4's spdlog-based logger with a small fmt sink.
-// Level from BB_GPU_LOG (trace|debug|info|warning|error; default warning).
+// Level from BB_GPU_LOG (trace|debug|info|warning|error; default warning); BB_NET_LOG sets
+// another one for the online module's classes (network, PSN, Rudp, shadNet).
 #pragma once
 #include <algorithm>
 #include <array>
@@ -25,6 +26,7 @@ enum class level : int { trace, debug, info, warn, err, critical, off };
 namespace Common::Log {
 using Level = spdlog::level;
 bool ShouldLog(Level level);
+bool ShouldLog(std::string_view log_class, Level level);
 void Write(std::string_view log_class, Level level, const char* file, int line, const char* function,
            std::string&& message);
 inline void Flush() {}
@@ -32,7 +34,7 @@ inline void Flush() {}
 
 #define LOG_GENERIC(log_class, log_level, fmt_str, ...)                                             \
     do {                                                                                           \
-        if (Common::Log::ShouldLog(log_level)) {                                                   \
+        if (Common::Log::ShouldLog(log_class, log_level)) {                                        \
             Common::Log::Write(log_class, log_level, __FILE__, __LINE__, __func__,                 \
                                fmt::format(fmt_str __VA_OPT__(, ) __VA_ARGS__));                    \
         }                                                                                          \

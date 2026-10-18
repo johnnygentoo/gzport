@@ -152,6 +152,44 @@ std::string ExtractProtoBytes(const std::vector<u8>& payload, size_t offset = 0)
     return std::string(reinterpret_cast<const char*>(payload.data() + offset + 4), len);
 }
 
+/// A refused request as the game expects it: a (negative) SCE_NP_MATCHING2_SERVER_ERROR_*
+/// code, never shadNet's own small number, which the game would take for success (GODZILLA
+/// then read the missing room data of a refused join and crashed).
+s32 ServerErrorCode(ShadNet::ErrorType error) {
+    using E = ShadNet::ErrorType;
+    constexpr s32 Base = s32(0x80550D00);
+    switch (error) {
+    case E::NoError:
+        return 0;
+    case E::Malformed:
+    case E::Invalid:
+    case E::InvalidInput:
+        return Base | 0x01; // BAD_REQUEST
+    case E::RoomMissing:
+        return Base | 0x31; // NO_SUCH_ROOM
+    case E::RoomAlreadyJoined:
+        return Base | 0x61; // ALREADY_JOINED
+    case E::RoomFull:
+        return Base | 0x41; // ROOM_FULL
+    case E::RoomPasswordMismatch:
+        return Base | 0x38; // PASSWORD_MISMATCH
+    case E::RoomPasswordMissing:
+        return Base | 0x56; // NO_PASSWORD
+    case E::RoomGroupNoJoinLabel:
+        return Base | 0x54; // NO_JOIN_GROUP_LABEL
+    case E::RoomGroupFull:
+        return Base | 0x43; // GROUP_FULL
+    case E::RoomGroupJoinLabelNotFound:
+        return Base | 0x55; // NO_SUCH_GROUP
+    case E::RoomGroupMaxSlotMismatch:
+        return Base | 0x57; // MAX_OVER_SLOT_GROUP
+    case E::Unauthorized:
+        return Base | 0x10; // FORBIDDEN
+    default:
+        return Base | 0x05; // INTERNAL_SERVER_ERROR
+    }
+}
+
 void DispatchRequestComplete(const PendingRequest& pr, ShadNet::ErrorType error,
                              const std::vector<u8>& body) {
     ContextObject* ctx = ContextManager::Instance().Get(pr.ctx_id);
@@ -159,7 +197,7 @@ void DispatchRequestComplete(const PendingRequest& pr, ShadNet::ErrorType error,
         return;
     }
 
-    const s32 error_code = (error == ShadNet::ErrorType::NoError) ? 0 : static_cast<s32>(error);
+    const s32 error_code = ServerErrorCode(error);
 
     if (pr.req_event == ORBIS_NP_MATCHING2_CONTEXT_EVENT_STARTED ||
         pr.req_event == ORBIS_NP_MATCHING2_CONTEXT_EVENT_STOPPED) {
@@ -376,6 +414,7 @@ void HandleRoomEvent(const ShadNet::NotifyRoomEvent& n) {
         for (const auto& a : n.member_bin_attrs) {
             MemberBinCache& b = mc.bins[a.attr_id];
             b.id = static_cast<OrbisNpMatching2AttributeId>(a.attr_id);
+            b.update_date = a.update_date;
             b.data = a.data;
         }
 
@@ -404,6 +443,52 @@ void HandleRoomEvent(const ShadNet::NotifyRoomEvent& n) {
                                      ORBIS_NP_MATCHING2_SIGNALING_ERROR_TERMINATED_BY_PEER);
         room_it->second.members.erase(mem_it);
         ctx->peers.erase(member_id);
+        break;
+    }
+    case ORBIS_NP_MATCHING2_ROOM_EVENT_UPDATED_ROOM_MEMBER_DATA_INTERNAL: {
+        // Another member's team, flags or internal bin attr changed: the cache follows, and the
+        // game gets the member with the attrs that came (GODZILLA compares their dates).
+        auto room_it = ctx->room_cache.find(room_id);
+        if (room_it == ctx->room_cache.end()) {
+            return;
+        }
+        auto mem_it = room_it->second.members.find(member_id);
+        if (mem_it == room_it->second.members.end()) {
+            return;
+        }
+        MemberCache& mc = mem_it->second;
+        const auto prev_flags = static_cast<OrbisNpMatching2FlagAttr>(mc.flag_attr);
+        mc.team_id = static_cast<OrbisNpMatching2TeamId>(n.member_team_id);
+        mc.flag_attr = n.member_flag_attr;
+        for (const auto& a : n.member_bin_attrs) {
+            MemberBinCache& b = mc.bins[a.attr_id];
+            b.id = static_cast<OrbisNpMatching2AttributeId>(a.attr_id);
+            b.update_date = a.update_date;
+            b.data = a.data;
+        }
+        BuildMemberUpdate(p, room_it->second, mc, cause, ctx->a_variant);
+        if (ctx->a_variant) {
+            break; // the A variant's update is the member update
+        }
+        for (auto& attr : p.member_bin_attrs) {
+            p.member_bin_attr_ptrs.push_back(&attr);
+        }
+        p.event_chg_flag_attr = std::make_unique<OrbisNpMatching2FlagAttr>(
+            static_cast<OrbisNpMatching2FlagAttr>(mc.flag_attr));
+        p.event_prev_flag_attr = std::make_unique<OrbisNpMatching2FlagAttr>(prev_flags);
+        p.event_team_id = std::make_unique<OrbisNpMatching2TeamId>(mc.team_id);
+        p.member_data_internal_update =
+            std::make_unique<OrbisNpMatching2RoomMemberDataInternalUpdate>();
+        auto& u = *p.member_data_internal_update;
+        u = {};
+        u.newRoomMemberDataInternal = p.event_member.get();
+        u.newFlagAttr = p.event_chg_flag_attr.get();
+        u.prevFlagAttr = p.event_prev_flag_attr.get();
+        u.newTeamId = p.event_team_id.get();
+        u.newRoomMemberBinAttrInternal =
+            p.member_bin_attr_ptrs.empty() ? nullptr : p.member_bin_attr_ptrs.data();
+        u.newRoomMemberBinAttrInternalNum = p.member_bin_attr_ptrs.size();
+        p.room_event_data = p.member_data_internal_update.get();
         break;
     }
     case ORBIS_NP_MATCHING2_ROOM_EVENT_KICKEDOUT: {
@@ -1141,6 +1226,23 @@ s32 MmSetRoomDataInternal(OrbisNpMatching2ContextId ctx_id, OrbisNpMatching2Requ
     }
     return MmSubmitRequest(ctx_id, req_id, ORBIS_NP_MATCHING2_REQUEST_EVENT_SET_ROOM_DATA_INTERNAL,
                            MmCommand::SetRoomDataInternal, MakeProtoPayload(req));
+}
+
+s32 MmSetRoomMemberDataInternal(OrbisNpMatching2ContextId ctx_id, OrbisNpMatching2RequestId req_id,
+                                const OrbisNpMatching2SetRoomMemberDataInternalRequest& request) {
+    shadnet::SetRoomMemberDataInternalRequest req;
+    req.set_req_id(req_id);
+    req.set_room_id(request.roomId);
+    req.set_member_id(request.memberId);
+    req.set_team_id(request.teamId);
+    req.set_flag_filter(request.flagFilter);
+    req.set_flag_attr(request.flagAttr);
+    for (u64 i = 0; i < request.roomMemberBinAttrInternalNum; ++i) {
+        AppendBinAttr(req.add_bin_attrs(), request.roomMemberBinAttrInternal[i]);
+    }
+    return MmSubmitRequest(ctx_id, req_id,
+                           ORBIS_NP_MATCHING2_REQUEST_EVENT_SET_ROOM_MEMBER_DATA_INTERNAL,
+                           MmCommand::SetRoomMemberDataInternal, MakeProtoPayload(req));
 }
 
 s32 MmSetRoomDataExternal(OrbisNpMatching2ContextId ctx_id, OrbisNpMatching2RequestId req_id,

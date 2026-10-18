@@ -1,0 +1,240 @@
+diff --git a/src/client_session.cpp b/src/client_session.cpp
+index b63f8f0..2b81d29 100644
+--- a/src/client_session.cpp
++++ b/src/client_session.cpp
+@@ -230,6 +230,8 @@ ErrorType ClientSession::DispatchCommand(CommandType cmd, StreamExtractor& se, Q
+         return CmdRequestSignalingInfos(se, reply);
+     case CommandType::SetRoomDataInternal:
+         return CmdSetRoomDataInternal(se, reply);
++    case CommandType::SetRoomMemberDataInternal:
++        return CmdSetRoomMemberDataInternal(se, reply);
+     case CommandType::SetRoomDataExternal:
+         return CmdSetRoomDataExternal(se, reply);
+     case CommandType::KickoutRoomMember:
+diff --git a/src/client_session.h b/src/client_session.h
+index e7a9133..f3091a8 100644
+--- a/src/client_session.h
++++ b/src/client_session.h
+@@ -226,6 +226,7 @@ public:
+     ErrorType CmdSendRoomMessage(StreamExtractor& data, QByteArray& reply);
+     ErrorType CmdRequestSignalingInfos(StreamExtractor& data, QByteArray& reply);
+     ErrorType CmdSetRoomDataInternal(StreamExtractor& data, QByteArray& reply);
++    ErrorType CmdSetRoomMemberDataInternal(StreamExtractor& data, QByteArray& reply);
+     ErrorType CmdSetRoomDataExternal(StreamExtractor& data, QByteArray& reply);
+     ErrorType CmdKickoutRoomMember(StreamExtractor& data, QByteArray& reply);
+     ErrorType CmdGetWorldInfoList(StreamExtractor& data, QByteArray& reply);
+@@ -274,6 +275,7 @@ private:
+     void SendRoomEventToTarget(uint64_t roomId, uint32_t event, uint32_t cause, int32_t errorCode,
+                                const QString& targetNpid);
+     void DoLeaveRoom(uint64_t roomId);
++    void LeaveAllRooms(const char* why);
+     void CleanupMatchingOnDisconnect();
+     void ResetMatchingRoomState(uint64_t roomId);
+     void GetSelfSignalingAddr(QString& addr, uint16_t& port) const;
+diff --git a/src/cmd_matching.cpp b/src/cmd_matching.cpp
+index eb997e5..cfd196e 100644
+--- a/src/cmd_matching.cpp
++++ b/src/cmd_matching.cpp
+@@ -464,6 +464,7 @@ ErrorType ClientSession::CmdCreateRoom(StreamExtractor& data, QByteArray& reply)
+     shadnet::CreateRoomRequest req;
+     if (!decodeProto(req, data) || data.error())
+         return ErrorType::Malformed;
++    LeaveAllRooms("creating a room");
+ 
+     uint16_t maxSlot = static_cast<uint16_t>(req.max_slots());
+     if (maxSlot < 1)
+@@ -665,6 +666,7 @@ ErrorType ClientSession::CmdJoinRoom(StreamExtractor& data, QByteArray& reply) {
+     shadnet::JoinRoomRequest req;
+     if (!decodeProto(req, data) || data.error())
+         return ErrorType::Malformed;
++    LeaveAllRooms("joining a room");
+ 
+     uint64_t roomId = req.room_id();
+ 
+@@ -1406,9 +1408,12 @@ ErrorType ClientSession::CmdSetRoomDataInternal(StreamExtractor& data, QByteArra
+ 
+         qInfo() << "SetRoomDataInternal: room=" << roomId << "flags=" << Qt::hex << newFlags
+                 << "binAttrs=" << req.bin_attrs_size();
++        for (const auto& slot : updatedSlots)
++            qInfo() << "  attr" << Qt::hex << slot.attrId << "data=" << slot.data.toHex();
+     }
+ 
+-    // Broadcast UpdatedRoomDataInternal to all other members (0x1106)
++    // UpdatedRoomDataInternal (0x1106) to every member, the owner who set it too: GODZILLA's
++    // owner waits for the room's flags in this event before it starts the match.
+     {
+         shadnet::NotifyRoomEvent pb;
+         pb.set_room_id(roomId);
+@@ -1433,8 +1438,8 @@ ErrorType ClientSession::CmdSetRoomDataInternal(StreamExtractor& data, QByteArra
+             appendProto(payload, event);
+             return BuildNotification(NotificationType::RoomEvent, payload);
+         };
+-        NotifyRoomMembers(buildPacket, m_matching.matchingKey, roomId, m_info.npid);
+-        qDebug() << "  -> UpdatedRoomDataInternal room=" << roomId << "broadcast (excl. sender)"
++        NotifyRoomMembers(buildPacket, m_matching.matchingKey, roomId);
++        qDebug() << "  -> UpdatedRoomDataInternal room=" << roomId << "broadcast"
+                  << "attrs=" << updatedSlots.size();
+     }
+ 
+@@ -1444,6 +1449,79 @@ ErrorType ClientSession::CmdSetRoomDataInternal(StreamExtractor& data, QByteArra
+     return ErrorType::NoError;
+ }
+ 
++ErrorType ClientSession::CmdSetRoomMemberDataInternal(StreamExtractor& data, QByteArray& reply) {
++    shadnet::SetRoomMemberDataInternalRequest req;
++    if (!decodeProto(req, data) || data.error())
++        return ErrorType::Malformed;
++
++    const uint64_t roomId = req.room_id();
++    shadnet::MatchingRoomMemberData memberPb;
++    {
++        QWriteLocker lk(&m_shared->matching.roomsLock);
++        auto roomIt = m_shared->matching.rooms.find({m_matching.matchingKey, roomId});
++        if (roomIt == m_shared->matching.rooms.end())
++            return ErrorType::RoomMissing;
++        Room& room = roomIt.value();
++        RoomMember* self = room.findByNpidMut(m_info.npid);
++        if (!self)
++            return ErrorType::RoomMissing;
++        RoomMember* target = self;
++        if (req.member_id() != 0 && req.member_id() != self->memberId) {
++            // Another member's data: the owner's privilege.
++            if (self->memberId != room.ownerMemberId)
++                return ErrorType::Unauthorized;
++            auto it = room.members.find(static_cast<uint16_t>(req.member_id()));
++            if (it == room.members.end())
++                return ErrorType::InvalidInput;
++            target = &it.value();
++        }
++
++        if (req.team_id() != 0)
++            target->teamId = static_cast<uint8_t>(req.team_id());
++        const uint32_t filter =
++            req.flag_filter() & ~Matching2::ORBIS_NP_MATCHING2_ROOMMEMBER_FLAG_ATTR_OWNER;
++        target->flagAttr = (target->flagAttr & ~filter) | (req.flag_attr() & filter);
++        for (int i = 0; i < req.bin_attrs_size(); ++i) {
++            const auto& a = req.bin_attrs(i);
++            if (a.attr_id() != Matching2::ORBIS_NP_MATCHING2_ROOMMEMBER_BIN_ATTR_INTERNAL_1_ID)
++                continue;
++            auto& slot = target->memberBinAttr;
++            slot.set = true;
++            slot.attrId = static_cast<uint16_t>(a.attr_id());
++            slot.data = QByteArray(a.data().data(), static_cast<int>(a.data().size()));
++            slot.updateDate = std::max<uint64_t>(slot.updateDate + 1, MatchingTimestampUsec());
++        }
++        memberPb = BuildRoomMemberData(*target);
++        qInfo() << "SetRoomMemberDataInternal: room=" << roomId << "member=" << target->memberId
++                << "by" << m_info.npid << "flags=" << Qt::hex << target->flagAttr
++                << "binAttrs=" << req.bin_attrs_size()
++                << "data=" << target->memberBinAttr.data.toHex();
++    }
++
++    // UpdatedRoomMemberDataInternal (0x1107) to every member, the sender too: the sender's own
++    // entry changes only by this event (GODZILLA's lobby counts its own ready flag with the others').
++    {
++        shadnet::NotifyRoomEvent pb;
++        pb.set_room_id(roomId);
++        pb.set_event(Matching2::ORBIS_NP_MATCHING2_ROOM_EVENT_UPDATED_ROOM_MEMBER_DATA_INTERNAL);
++        pb.set_event_cause(Matching2::ORBIS_NP_MATCHING2_EVENT_CAUSE_SERVER_OPERATION);
++        *pb.mutable_member() = memberPb;
++        const auto buildPacket = [pb](uint32_t contextId) {
++            auto event = pb;
++            event.set_ctx_id(contextId);
++            QByteArray payload;
++            appendProto(payload, event);
++            return BuildNotification(NotificationType::RoomEvent, payload);
++        };
++        NotifyRoomMembers(buildPacket, m_matching.matchingKey, roomId);
++    }
++
++    shadnet::SetRoomMemberDataInternalReply rep;
++    rep.set_room_id(roomId);
++    appendProto(reply, rep);
++    return ErrorType::NoError;
++}
++
+ ErrorType ClientSession::CmdSetRoomDataExternal(StreamExtractor& data, QByteArray& reply) {
+     shadnet::SetRoomDataExternalRequest req;
+     if (!decodeProto(req, data) || data.error())
+@@ -1578,12 +1656,30 @@ void ClientSession::DoLeaveRoom(uint64_t roomId) {
+ 
+ // ── Disconnect cleanup ────────────────────────────────────────────────────────
+ 
++// Every room this player is still in: the session tracks one room, but a game that creates or
++// joins another without leaving (GODZILLA backing out of its versus lobby) leaves the first one
++// behind, a member the others keep seeing and a room its own next search finds.
++void ClientSession::LeaveAllRooms(const char* why) {
++    QVector<uint64_t> roomIds;
++    {
++        QReadLocker lk(&m_shared->matching.roomsLock);
++        for (auto it = m_shared->matching.rooms.cbegin(); it != m_shared->matching.rooms.cend();
++             ++it) {
++            if (it.key().first == m_matching.matchingKey && it.value().findByNpid(m_info.npid))
++                roomIds.append(it.key().second);
++        }
++    }
++    for (const uint64_t roomId : roomIds) {
++        qInfo() << "Leaving room" << roomId << "for" << m_info.npid << "(" << why << ")";
++        DoLeaveRoom(roomId);
++    }
++}
++
+ void ClientSession::CleanupMatchingOnDisconnect() {
+     if (!m_matching.initialized)
+         return;
+ 
+-    if (m_matching.roomId != 0)
+-        DoLeaveRoom(m_matching.roomId);
++    LeaveAllRooms("disconnect");
+ 
+     qInfo() << "Matching cleanup for" << m_info.npid;
+ }
+diff --git a/src/matching.h b/src/matching.h
+index 22b8f0f..c764ab1 100644
+--- a/src/matching.h
++++ b/src/matching.h
+@@ -34,6 +34,7 @@ constexpr uint32_t ORBIS_NP_MATCHING2_ROOM_EVENT_KICKEDOUT = 0x1103;
+ constexpr uint32_t ORBIS_NP_MATCHING2_ROOM_EVENT_ROOM_DESTROYED = 0x1104;
+ constexpr uint32_t ORBIS_NP_MATCHING2_ROOM_EVENT_ROOM_OWNER_CHANGED = 0x1105;
+ constexpr uint32_t ORBIS_NP_MATCHING2_ROOM_EVENT_UPDATED_ROOM_DATA_INTERNAL = 0x1106;
++constexpr uint32_t ORBIS_NP_MATCHING2_ROOM_EVENT_UPDATED_ROOM_MEMBER_DATA_INTERNAL = 0x1107;
+ 
+ constexpr uint8_t ORBIS_NP_MATCHING2_EVENT_CAUSE_LEAVE_ACTION = 1;
+ constexpr uint8_t ORBIS_NP_MATCHING2_EVENT_CAUSE_KICKOUT_ACTION = 2;
+diff --git a/src/protocol.h b/src/protocol.h
+index 11d6b76..b945b4e 100644
+--- a/src/protocol.h
++++ b/src/protocol.h
+@@ -62,6 +62,7 @@ enum class CommandType : uint16_t {
+     GetUserInfoList = 113,
+     GetRoomMemberDataExternalList = 114,
+     SendRoomMessage = 115,
++    SetRoomMemberDataInternal = 116,
+ };
+ 
+ // Notification type IDs (u16 LE in Notification packet header).
+diff --git a/src/shadnet.proto b/src/shadnet.proto
+index 0d6c1b4..b407248 100644
+--- a/src/shadnet.proto
++++ b/src/shadnet.proto
+@@ -509,6 +509,20 @@ message RequestSignalingInfosReply {
+ 
+ message LeaveRoomReply            { uint64 room_id = 1; }
+ message SetRoomDataInternalReply  { uint64 room_id = 1; }
++
++// sceNpMatching2SetRoomMemberDataInternal: a member's team, flags and internal bin attr
++// (GODZILLA's versus lobby marks each player ready with it). member_id 0 is the sender;
++// team_id 0 leaves the team. The others get RoomEvent 0x1107 with the member's new data.
++message SetRoomMemberDataInternalRequest {
++    uint32 req_id      = 1;
++    uint64 room_id     = 2;
++    uint32 member_id   = 3;
++    uint32 team_id     = 4;
++    uint32 flag_filter = 5;
++    uint32 flag_attr   = 6;
++    repeated MatchingBinAttr bin_attrs = 7;
++}
++message SetRoomMemberDataInternalReply { uint64 room_id = 1; }
+ message SetRoomDataExternalReply  { uint64 room_id = 1; }
+ message KickoutRoomMemberReply    { uint64 room_id = 1; }
+ 

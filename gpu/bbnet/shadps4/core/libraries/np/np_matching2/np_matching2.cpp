@@ -5,12 +5,18 @@
 #include <cstring>
 #include <memory>
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include "common/logging/log.h"
 #include "core/bloodborne_re.h"
 #include "core/emulator_settings.h"
 #include "core/libraries/error_codes.h"
 #include "core/libraries/libs.h"
 #include "core/libraries/network/net.h"
+#include "core/libraries/network/sockets.h"
 #include "core/libraries/np/np_handler.h"
 #include "core/libraries/np/np_manager.h"
 #include "core/libraries/np/np_matching2/np_matching2.h"
@@ -949,8 +955,30 @@ int PS4_SYSV_ABI sceNpMatching2SetLobbyMemberDataInternal() {
     return ORBIS_OK;
 }
 
-int PS4_SYSV_ABI sceNpMatching2SetRoomMemberDataInternal() {
-    LOG_INFO(Lib_NpMatching2, "called");
+int PS4_SYSV_ABI sceNpMatching2SetRoomMemberDataInternal(
+    OrbisNpMatching2ContextId ctxId, OrbisNpMatching2SetRoomMemberDataInternalRequest* request,
+    OrbisNpMatching2RequestOptParam* requestOpt, OrbisNpMatching2RequestId* requestId) {
+    LOG_INFO(Lib_NpMatching2, "called, ctxId = {}, requestOpt = {}", ctxId, fmt::ptr(requestOpt));
+
+    if (!IsInitialized()) {
+        LOG_ERROR(Lib_NpMatching2, "not initialized");
+        return ORBIS_NP_MATCHING2_ERROR_NOT_INITIALIZED;
+    }
+    if (!request || !requestId) {
+        LOG_ERROR(Lib_NpMatching2, "request or requestId null");
+        return ORBIS_NP_MATCHING2_ERROR_INVALID_ARGUMENT;
+    }
+
+    ContextObject* ctx = ContextManager::Instance().Get(ctxId);
+    if (!ctx) {
+        LOG_ERROR(Lib_NpMatching2, "invalid context id");
+        return ORBIS_NP_MATCHING2_ERROR_INVALID_CONTEXT_ID;
+    }
+
+    StoreRequestCallback(ctx, requestOpt);
+    const OrbisNpMatching2RequestId reqId = AllocRequestId();
+    *requestId = reqId;
+    MmSetRoomMemberDataInternal(ctxId, reqId, *request);
     return ORBIS_OK;
 }
 
@@ -1052,9 +1080,58 @@ int PS4_SYSV_ABI sceNpMatching2SignalingGetConnectionInfo(OrbisNpMatching2Contex
     return FillMatching2ConnectionInfo(*ctx, roomId, memberId, infoType, connInfo, false);
 }
 
-int PS4_SYSV_ABI sceNpMatching2SignalingGetLocalNetInfo(OrbisNpMatching2ContextId ctxId,
-                                                        void* info) {
-    LOG_INFO(Lib_NpMatching2, "called, ctxId = {}", ctxId);
+namespace {
+// SceNpMatching2SignalingNetInfo: the caller sets size (0x18).
+struct OrbisNpMatching2SignalingNetInfo {
+    u64 size;
+    u32 localAddr;  // network order
+    u32 mappedAddr; // as the server sees it
+    s32 natStatus;
+};
+
+/// This PC's address toward the matching server: the interface the system routes to it (no
+/// packet is sent). 0 when there is no route.
+u32 LocalAddressTowardServer() {
+    const u32 server = GetMmServerAddr();
+    if (server == 0) {
+        return 0;
+    }
+    const int s = ::socket(AF_INET, SOCK_DGRAM, 0);
+    if (s < 0) {
+        return 0;
+    }
+    sockaddr_in to{};
+    to.sin_family = AF_INET;
+    to.sin_addr.s_addr = server;
+    to.sin_port = htons(31314);
+    sockaddr_in local{};
+    socklen_t length = sizeof(local);
+    u32 address = 0;
+    if (::connect(s, reinterpret_cast<sockaddr*>(&to), sizeof(to)) == 0 &&
+        ::getsockname(s, reinterpret_cast<sockaddr*>(&local), &length) == 0) {
+        address = local.sin_addr.s_addr;
+    }
+    ::close(s);
+    return address;
+}
+} // namespace
+
+// GODZILLA reads its own address here for its entry in the list of players (with the others'
+// from sceNpMatching2SignalingGetConnectionStatus).
+int PS4_SYSV_ABI sceNpMatching2SignalingGetLocalNetInfo(void* info) {
+    auto* net_info = static_cast<OrbisNpMatching2SignalingNetInfo*>(info);
+    if (!net_info || net_info->size < sizeof(OrbisNpMatching2SignalingNetInfo)) {
+        LOG_ERROR(Lib_NpMatching2, "net info null or too small");
+        return ORBIS_NP_MATCHING2_ERROR_INVALID_ARGUMENT;
+    }
+    u32 address = Libraries::Net::GetP2PAdvertisedAddr();
+    if (address == 0) {
+        address = LocalAddressTowardServer();
+    }
+    net_info->localAddr = address;
+    net_info->mappedAddr = address;
+    net_info->natStatus = 1; // NAT type 1: a LAN or an open port
+    LOG_DEBUG(Lib_NpMatching2, "local net info: addr={:#x}", address);
     return ORBIS_OK;
 }
 

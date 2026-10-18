@@ -120,6 +120,9 @@ struct CallbackPayload {
     std::vector<OrbisNpMatching2RoomBinAttrInternal> room_bin_attrs;
     std::vector<OrbisNpMatching2RoomBinAttrInternal*> room_bin_attr_ptrs;
     std::vector<OrbisNpMatching2RoomMemberBinAttrInternal> member_bin_attrs;
+    std::vector<OrbisNpMatching2RoomMemberBinAttrInternal*> member_bin_attr_ptrs;
+    std::unique_ptr<OrbisNpMatching2RoomMemberDataInternalUpdate> member_data_internal_update;
+    std::unique_ptr<OrbisNpMatching2TeamId> event_team_id;
     std::vector<OrbisNpMatching2RoomDataExternal> room_data_external;
     std::vector<OrbisNpMatching2RoomDataExternalA> room_data_external_a;
     std::vector<OrbisNpMatching2UserInfo> user_info;

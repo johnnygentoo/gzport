@@ -531,6 +531,20 @@ message RequestSignalingInfosReply {
 
 message LeaveRoomReply           { uint64 room_id = 1; }
 message SetRoomDataInternalReply { uint64 room_id = 1; }
+
+// sceNpMatching2SetRoomMemberDataInternal: a member's team, flags and internal bin attr
+// (GODZILLA's versus lobby marks each player ready with it). member_id 0 is the sender;
+// team_id 0 leaves the team. The others get RoomEvent 0x1107 with the member's new data.
+message SetRoomMemberDataInternalRequest {
+    uint32 req_id      = 1;
+    uint64 room_id     = 2;
+    uint32 member_id   = 3;
+    uint32 team_id     = 4;
+    uint32 flag_filter = 5;
+    uint32 flag_attr   = 6;
+    repeated MatchingBinAttr bin_attrs = 7;
+}
+message SetRoomMemberDataInternalReply { uint64 room_id = 1; }
 message SetRoomDataExternalReply { uint64 room_id = 1; }
 message KickoutRoomMemberReply   { uint64 room_id = 1; }
 

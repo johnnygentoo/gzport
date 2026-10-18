@@ -67,6 +67,7 @@ enum OrbisNpMatching2Event : u16 {
     ORBIS_NP_MATCHING2_REQUEST_EVENT_SEND_ROOM_MESSAGE = 0x0108,
     ORBIS_NP_MATCHING2_REQUEST_EVENT_SET_ROOM_DATA_INTERNAL = 0x0109,
     ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_ROOM_DATA_INTERNAL = 0x010A,
+    ORBIS_NP_MATCHING2_REQUEST_EVENT_SET_ROOM_MEMBER_DATA_INTERNAL = 0x010B,
     ORBIS_NP_MATCHING2_REQUEST_EVENT_JOIN_LOBBY = 0x0201,
     ORBIS_NP_MATCHING2_REQUEST_EVENT_SIGNALING_GET_PING_INFO = 0x0E01,
     ORBIS_NP_MATCHING2_ROOM_EVENT_MEMBER_JOINED = 0x1101,
@@ -792,6 +793,18 @@ struct OrbisNpMatching2SetRoomDataExternalRequest {
 };
 
 // SetRoomDataInternal request
+struct OrbisNpMatching2SetRoomMemberDataInternalRequest {
+    OrbisNpMatching2RoomId roomId;
+    OrbisNpMatching2RoomMemberId memberId; // 0: the caller
+    OrbisNpMatching2TeamId teamId;         // 0: unchanged
+    u8 pad[5];
+    OrbisNpMatching2Flags flagFilter;
+    OrbisNpMatching2Flags flagAttr;
+    const OrbisNpMatching2BinAttr* roomMemberBinAttrInternal;
+    u64 roomMemberBinAttrInternalNum;
+};
+static_assert(sizeof(OrbisNpMatching2SetRoomMemberDataInternalRequest) == 0x28);
+
 struct OrbisNpMatching2SetRoomDataInternalRequest {
     OrbisNpMatching2RoomId roomId;
     OrbisNpMatching2Flags flagFilter;
@@ -888,6 +901,16 @@ struct OrbisNpMatching2RoomDataInternalUpdate {
     u64 chgRoomGroupNum;
     OrbisNpMatching2RoomBinAttrInternal** chgRoomBinAttrInternal;
     u64 chgRoomBinAttrInternalNum;
+};
+
+// Room event UPDATED_ROOM_MEMBER_DATA_INTERNAL (0x1107)
+struct OrbisNpMatching2RoomMemberDataInternalUpdate {
+    OrbisNpMatching2RoomMemberDataInternal* newRoomMemberDataInternal;
+    OrbisNpMatching2FlagAttr* newFlagAttr;
+    OrbisNpMatching2FlagAttr* prevFlagAttr;
+    OrbisNpMatching2TeamId* newTeamId;
+    OrbisNpMatching2RoomMemberBinAttrInternal** newRoomMemberBinAttrInternal;
+    u64 newRoomMemberBinAttrInternalNum;
 };
 
 // Room update information

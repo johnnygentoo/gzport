@@ -16,6 +16,10 @@ ARG SHADNET_REF=5a849a192fd4450593c57b10697316ac324c856e
 RUN git clone https://github.com/Wozzardman/shadnet-p2p.git /src && cd /src \
     && git checkout "$SHADNET_REF" && git submodule update --init --recursive
 WORKDIR /src
+# GODZILLA's versus lobby (docs/LAN-VERSUS.md): players' ready data (SetRoomMemberDataInternal),
+# room and member events to their sender too, stale room memberships dropped.
+COPY godzilla-versus.patch /tmp/
+RUN git apply /tmp/godzilla-versus.patch
 RUN cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build \
     && cmake -G Ninja -S clientsample -B clientsample/build -DCMAKE_BUILD_TYPE=Release \
     && cmake --build clientsample/build
