@@ -52,7 +52,7 @@ constexpr UpscalerHooks Hooks = {
     // The HUD pass's first vertex shader when the G-Force operator panel is up; without it the
     // HUD starts with another one (0x1c3cc5dd), hence scene_done_vertex_shader.
     .hud_vertex_shader = 0xb9725368,
-    .hud_vertex_shaders = {0x1c3cc5dd},
+    .hud_vertex_shaders = {0x1c3cc5dd, 0x43f161a3},
     // The combine pass (bloom and the scene into the second RGBA8 target), then the copy of
     // the finished frame that the next frame's first pass puts into the display buffer.
     .scene_done_vertex_shader = 0x6fbcebea,
