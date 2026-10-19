@@ -86,7 +86,7 @@ typedef struct System System;
 typedef struct Rack Rack;
 typedef struct Voice Voice;
 typedef struct { Voice *dest; float volume; int32_t matrix; } Port;
-typedef struct { WaveformBlock b; uint32_t repeated; } Block;
+typedef struct { WaveformBlock b; uint32_t repeated, continues; } Block;
 struct Voice {
     uint32_t magic, index;
     Rack *rack;
@@ -102,9 +102,10 @@ struct Voice {
     uint32_t at9_frame_in_superframe;
     /* ATRAC9 decodes whole superframes, gathered across blocks: a streamed waveform's data
        blocks (voice lines) are cut anywhere. The segment (the samples a block with a sample
-       count starts, continued by data-only blocks) counts down in at9_remaining. */
+       count starts, continued by data-only blocks and by appended ones that repeat its skip
+       and sample count) counts down in at9_remaining. */
     unsigned char superframe[1024];
-    uint32_t superframe_fill, at9_remaining;
+    uint32_t superframe_fill, at9_remaining, segment_skip, segment_samples;
     float frame[MAX_CH*256*4];
     uint32_t frame_count, frame_pos;
     float current[MAX_CH], next[MAX_CH];
@@ -455,13 +456,16 @@ static void block_restart(Voice *v) {
     v->read_bytes=0;
     /* No block yet: a stream waiting for its next data keeps what it gathered. */
     if (!v->nblocks && v->type==WAVE_ATRAC9 && v->at9_remaining) return;
-    /* A block with samples starts a segment; a data-only one (no samples) continues it. */
-    const int continues=v->type==WAVE_ATRAC9 && v->nblocks && !v->blocks[0].b.samples;
+    /* A block with samples starts a segment; a data-only one (no samples), or one appended to
+       a stream (sampler_blocks), continues it while it has samples left. */
+    const int continues=v->type==WAVE_ATRAC9 && v->nblocks && v->at9_remaining &&
+                        (!v->blocks[0].b.samples || (v->blocks[0].continues && !v->blocks[0].repeated));
     if (!continues) {
         v->played=0; v->frame_count=v->frame_pos=0; v->at9_frame_in_superframe=0;
         v->skip_left=v->nblocks ? v->blocks[0].b.skip : 0;
         v->superframe_fill=0;
         v->at9_remaining=v->nblocks ? v->blocks[0].b.samples : 0;
+        v->segment_skip=v->skip_left; v->segment_samples=v->at9_remaining;
     }
     /* One decoder per waveform (setup): LibAtrac9 builds its tables in InitDecoder, too slow for
        every block and repeat. A block starts a frame early (at9_range), which settles the
@@ -493,6 +497,7 @@ static int32_t sampler_setup(Voice *v,const unsigned char *p,uint32_t size) {
     voice_release_decoder(v);
     v->state=STATE_EMPTY; v->nblocks=0; v->accepts=1; v->data=NULL; v->frame_count=v->frame_pos=0;
     v->decoded_samples=v->decoded_bytes=0; v->pitch=1.0f; v->primed=0; v->phase=0; v->failed=0;
+    v->at9_remaining=v->superframe_fill=0;
     (void)was_playing;
     if (!f.channels || f.channels>MAX_CH) return ERR_INVALID_WAVEFORM_FORMAT;
     v->type=f.type; v->channels=f.channels; v->rate=f.sample_rate ? f.sample_rate : 48000;
@@ -510,27 +515,33 @@ static int32_t sampler_blocks(Voice *v,const unsigned char *p,uint32_t size) {
     memcpy(&data,p+8,8); memcpy(&flags,p+16,4); memcpy(&count,p+20,4); memcpy(&blocks,p+24,8);
     TRACE("  waveform blocks: data=%p flags=%#x count=%u\n",data,flags,count);
     if (count && (!data || !blocks)) return ERR_INVALID_WAVEFORM_DATA;
-    const int append=(flags&BLOCKS_APPEND) && v->nblocks;
+    /* GODZILLA streams voice lines through a ring buffer: the first block, then each refill
+       appended while the voice reads (CONTINUE|APPEND, the last one APPEND only), each with the
+       line's own skip and sample count again. Its bytes go on where the previous block's
+       stopped, mid-superframe: an appended block that repeats the segment's skip and count
+       continues it (same decoder, the gathered superframe kept, no new skip). Appended to a
+       stream that has run dry (no block left), it goes on too. */
+    const int stream=v->type==WAVE_ATRAC9 && (flags&BLOCKS_APPEND) && v->at9_remaining && v->data;
+    const int append=(flags&BLOCKS_APPEND) && (v->nblocks || stream);
+    const uint32_t before=v->nblocks;
+    intptr_t delta=0;
     if (!append) {
         v->nblocks=0; v->data=data;
     } else if (data!=v->data) {
         /* Appended blocks of another buffer: offsets are rebased onto the first buffer. */
-        const intptr_t delta=(const unsigned char *)data-v->data;
-        const uint32_t before=v->nblocks;
-        for (uint32_t i=0;i<count && v->nblocks<MAX_BLOCKS;++i) {
-            Block *b=&v->blocks[v->nblocks++];
-            b->b=blocks[i]; b->b.offset=(uint32_t)((intptr_t)b->b.offset+delta); b->repeated=0;
-        }
-        v->accepts=(flags&BLOCKS_CONTINUE)!=0;
-        if (!before && v->nblocks) block_restart(v); /* the voice waited for this data */
-        return 0;
+        delta=(const unsigned char *)data-v->data;
     }
     for (uint32_t i=0;i<count && v->nblocks<MAX_BLOCKS;++i) {
         dump("block",&blocks[i],sizeof(*blocks));
-        v->blocks[v->nblocks].b=blocks[i]; v->blocks[v->nblocks].repeated=0; ++v->nblocks;
+        Block *b=&v->blocks[v->nblocks++];
+        b->b=blocks[i]; b->b.offset=(uint32_t)((intptr_t)b->b.offset+delta); b->repeated=0;
+        b->continues=append && v->type==WAVE_ATRAC9 &&
+                     (!b->b.samples || (b->b.samples==v->segment_samples && b->b.skip==v->segment_skip));
     }
     v->accepts=(flags&BLOCKS_CONTINUE)!=0;
-    if (!append) {
+    if (append) {
+        if (!before && v->nblocks) block_restart(v); /* the voice waited for this data */
+    } else {
         /* A new waveform: a fresh decoder. ATRAC9 frames reuse the band parameters of the frame
            before; the last waveform's would make its first frame fail (voice lines played one
            after another on one voice without a new setup). */
