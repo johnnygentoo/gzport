@@ -76,6 +76,17 @@ public:
         return *this;
     }
 
+    /// bbport: a texture buffer, or none when the game's allocator has no room left (the
+    /// constructor asserts instead).
+    static std::optional<GuestBuffer> TryTexture(const AvPlayerMemAllocator& memory_replacement,
+                                                 u32 align, u32 size) noexcept {
+        u8* data = AllocateTexture(memory_replacement, align, size);
+        if (data == nullptr) {
+            return std::nullopt;
+        }
+        return GuestBuffer(memory_replacement, data, size);
+    }
+
     u8* GetBuffer() const noexcept {
         return m_data;
     }
@@ -85,6 +96,10 @@ public:
     }
 
 private:
+    GuestBuffer(const AvPlayerMemAllocator& memory_replacement, u8* data, u32 size) noexcept
+        : m_memory_replacement(memory_replacement), m_data(data), m_size(size),
+          m_is_texture(true) {}
+
     static u8* Allocate(const AvPlayerMemAllocator& memory_replacement, u32 align, u32 size) {
         return reinterpret_cast<u8*>(
             memory_replacement.allocate(memory_replacement.object_ptr, align, size));
@@ -218,6 +233,12 @@ private:
 
     AvPlayerQueue<GuestBuffer> m_audio_buffers;
     AvPlayerQueue<GuestBuffer> m_video_buffers;
+    /// bbport: video frames the game has moved on from, kept from the decoder for
+    /// m_video_hold_frames more frames: the GPU draws from guest memory after the game has
+    /// submitted, often frames later, and a buffer decoded into at once was shown with a
+    /// later or half-written picture (movies stuttered and jumped back and forth).
+    AvPlayerQueue<GuestBuffer> m_retired_video_buffers;
+    u32 m_video_hold_frames = 0;
 
     AvPlayerQueue<AVPacketPtr> m_audio_packets;
     AvPlayerQueue<AVPacketPtr> m_video_packets;

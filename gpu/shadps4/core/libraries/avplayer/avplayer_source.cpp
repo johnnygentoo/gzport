@@ -12,6 +12,10 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
+
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -26,6 +30,18 @@ extern "C" {
 extern "C" int runtime_file_translate(const char* guest, char* out, size_t size);
 
 namespace Libraries::AvPlayer {
+
+/// bbport BB_AVPLAYER_TRACE=1: when each video and audio frame is handed to the game (host ms
+/// since the first), with its timestamp and the player's clock.
+static bool AvTrace() {
+    static const bool on = std::getenv("BB_AVPLAYER_TRACE") != nullptr;
+    return on;
+}
+static double AvTraceMs() {
+    static const auto start = std::chrono::steady_clock::now();
+    return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start)
+        .count();
+}
 
 static AvPlayerStreamType CodecTypeToStreamType(AVMediaType codec_type) {
     switch (codec_type) {
@@ -265,6 +281,23 @@ bool AvPlayerSource::Start() {
         for (u64 index = 0; index < m_max_num_video_framebuffers; ++index) {
             m_video_buffers.Push(GuestBuffer(m_memory_replacement, 0x100, size, true));
         }
+        // bbport: a frame the game is done with stays untouched for a few more frames (about
+        // 100 ms at 30 FPS) while the GPU may still draw it; as many extra buffers as the
+        // game's allocator gives keep the decoder ahead as before.
+        constexpr u32 HoldFrames = 3;
+        m_video_hold_frames = 0;
+        while (m_video_hold_frames < HoldFrames) {
+            auto extra = GuestBuffer::TryTexture(m_memory_replacement, 0x100, size);
+            if (!extra.has_value()) {
+                break;
+            }
+            m_video_buffers.Push(std::move(*extra));
+            ++m_video_hold_frames;
+        }
+        if (m_video_hold_frames < HoldFrames) {
+            LOG_WARNING(Lib_AvPlayer, "{} of {} extra video buffers: frames reused sooner",
+                        m_video_hold_frames, HoldFrames);
+        }
     }
     if (m_audio_stream_index) {
         const auto stream_index = m_streams[m_audio_stream_index.value()].ffmpeg_index;
@@ -321,6 +354,7 @@ bool AvPlayerSource::Stop() {
     m_current_video_frame.reset();
 
     m_video_buffers.Clear();
+    m_retired_video_buffers.Clear();
     m_audio_buffers.Clear();
     m_audio_packets.Clear();
     m_video_packets.Clear();
@@ -381,8 +415,15 @@ bool AvPlayerSource::GetVideoData(AvPlayerFrameInfoEx& video_info) {
     }
 
     if (m_current_video_frame.has_value()) {
-        m_video_buffers.Push(std::move(m_current_video_frame->buffer));
+        m_retired_video_buffers.Push(std::move(m_current_video_frame->buffer));
         m_current_video_frame.reset();
+        while (m_retired_video_buffers.Size() > m_video_hold_frames) {
+            auto oldest = m_retired_video_buffers.Pop();
+            if (!oldest.has_value()) {
+                break;
+            }
+            m_video_buffers.Push(std::move(*oldest));
+        }
         m_video_buffers_cv.Notify();
     }
 
@@ -391,6 +432,11 @@ bool AvPlayerSource::GetVideoData(AvPlayerFrameInfoEx& video_info) {
         return false; // bbport: cleared since the size check (the player stopped)
     }
     video_info = frame->info;
+    if (AvTrace()) {
+        std::printf("AvPlayer trace: %.1f video ts %llu clock %llu queued %zu\n", AvTraceMs(),
+                    (unsigned long long)frame->info.timestamp, (unsigned long long)current_time,
+                    size_t(m_video_frames.Size()));
+    }
 
     m_current_video_frame = std::move(frame);
     return true;
@@ -414,6 +460,10 @@ bool AvPlayerSource::GetAudioData(AvPlayerFrameInfo& audio_info) {
     auto frame = m_audio_frames.Pop();
     if (!frame.has_value()) {
         return false; // bbport: cleared since the size check (the player stopped)
+    }
+    if (AvTrace()) {
+        std::printf("AvPlayer trace: %.1f audio ts %llu clock %llu\n", AvTraceMs(),
+                    (unsigned long long)frame->info.timestamp, (unsigned long long)CurrentTime());
     }
     m_last_audio_ts = frame->info.timestamp;
     m_last_data_time = std::chrono::high_resolution_clock::now();
