@@ -120,11 +120,12 @@ static ABI int32_t addon_list(uint32_t service,void *list,uint32_t capacity,uint
     if (count) printf("Runtime: AppContent add-ons reported installed (%s): %u\n",root,(unsigned)count);
     ++lists; return 0;
 }
-/* One add-on by its entitlement label: installed when <user>/addcont/<title>/<label> is a folder. */
-#define ERR_ADDCONT_NOT_FOUND ((int32_t)0x80D90005)
-static ABI int32_t addon_info(uint32_t service_label,const char *label,AddonInfo *info) {
-    (void)service_label;
-    if (!label || !info) return (int32_t)0x80D90002; /* PARAMETER */
+/* One add-on by its entitlement label: installed when <user>/addcont/<title>/<label> is a folder.
+ * Any other label is one this console does not own (DRM_NO_ENTITLEMENT, as on a PS4 and in
+ * shadPS4): GODZILLA checks PS4GODZILLADLC00..07 at start with info and key, and takes any
+ * other error as a broken add-on. */
+#define ERR_NO_ENTITLEMENT ((int32_t)0x80D90007)
+static int addon_present(const char *label) {
     char root[4096];
     snprintf(root,sizeof(root),"%s/addcont",runtime_file_user_dir());
     DIR *titles=opendir(root);
@@ -136,17 +137,25 @@ static ABI int32_t addon_info(uint32_t service_label,const char *label,AddonInfo
         found=!stat(path,&entry) && S_ISDIR(entry.st_mode);
     }
     if (titles) closedir(titles);
+    return found;
+}
+static ABI int32_t addon_info(uint32_t service_label,const char *label,AddonInfo *info) {
+    (void)service_label;
+    if (!label || !info) return PARAMETER;
     ++queries;
-    if (!found) return ERR_ADDCONT_NOT_FOUND;
+    if (!addon_present(label)) return ERR_NO_ENTITLEMENT;
     memset(info,0,sizeof(*info)); memcpy(info->label,label,strnlen(label,LABEL_SIZE-1));
     info->status=ADDON_INSTALLED;
+    printf("Runtime: AppContent add-on %.16s installed\n",label);
     return 0;
 }
-/* Entitlement keys decrypt add-on data, which dumps carry decrypted: no key is needed. */
+/* Entitlement keys decrypt add-on data, which dumps carry decrypted: an installed add-on's key
+ * is zeros. */
 static ABI int32_t entitlement_key(uint32_t service_label,const char *label,void *key) {
-    (void)service_label; (void)label;
-    if (key) memset(key,0,16);
-    return ERR_ADDCONT_NOT_FOUND;
+    (void)service_label;
+    if (!label || !key) return PARAMETER;
+    memset(key,0,16);
+    return addon_present(label) ? 0 : ERR_NO_ENTITLEMENT;
 }
 uintptr_t runtime_content_resolve(const char *name) {
     if (runtime_nid_is(name,"m47juOmH0VE#G#H")) return (uintptr_t)addon_info;        /* sceAppContentGetAddcontInfo */

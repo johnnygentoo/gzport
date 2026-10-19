@@ -13,6 +13,7 @@ typedef int32_t (ABI *Module)(uint16_t);
 typedef int32_t (ABI *Init)(const void *,void *);
 typedef int32_t (ABI *Param)(uint32_t,int32_t *);
 typedef int32_t (ABI *List)(uint32_t,void *,uint32_t,uint32_t *);
+typedef int32_t (ABI *Info)(uint32_t,const char *,void *);
 #define GET(t,n) ((t)runtime_content_resolve(n))
 int main(int argc,char **argv) {
     assert(mkdtemp(user_dir));
@@ -72,6 +73,17 @@ int main(int argc,char **argv) {
     assert(!strcmp((const char *)entries,"SPEXPANSIONDLC03"));
     uint32_t status; memcpy(&status,entries+20,4); assert(status==4);
     for (unsigned i=24;i<sizeof(entries);++i) assert(entries[i]==0xaa);
+    /* One label: installed with a key, any other not owned (GODZILLA's check at start). */
+    Info info=GET(Info,"m47juOmH0VE#G#H"), key=GET(Info,"XTWR0UXvcgs#G#H");
+    unsigned char one[24], k[16];
+    memset(one,0xaa,sizeof(one)); memset(k,0xaa,sizeof(k));
+    assert(info(0,"SPEXPANSIONDLC03",one)==0 && !strcmp((const char *)one,"SPEXPANSIONDLC03"));
+    memcpy(&status,one+20,4); assert(status==4);
+    assert(key(0,"SPEXPANSIONDLC03",k)==0);
+    for (unsigned i=0;i<sizeof(k);++i) assert(k[i]==0);
+    assert((uint32_t)info(0,"PS4GODZILLADLC00",one)==0x80d90007);
+    assert((uint32_t)key(0,"PS4GODZILLADLC00",k)==0x80d90007);
+    assert((uint32_t)info(0,NULL,one)==0x80d90002 && (uint32_t)key(0,"X",NULL)==0x80d90002);
     rmdir(path);
     snprintf(path,sizeof(path),"%s/addcont/CUSA00900",user_dir); rmdir(path);
     snprintf(path,sizeof(path),"%s/addcont",user_dir); rmdir(path);
