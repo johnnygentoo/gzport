@@ -77,6 +77,23 @@ static const char* acb_task_name[] = NAME_ARRAY(ACB_TASK, MAX_NAMES);
 
 std::array<u8, 48_KB> Liverpool::ConstantEngine::constants_heap;
 
+/// bbport: DISPATCH_INDIRECT carries its own dispatch initiator. The register used to keep the last
+/// direct dispatch's value (or none), so a queue that only dispatched indirectly skipped them all:
+/// counted here (the first, then every 600th) when that old check would have skipped one.
+static void NoteIndirectInitiator(u32 before, u32 packet, const char* queue) {
+    static std::atomic<u32> rescued{0};
+    if ((before & 1) != 0 || (packet & 1) == 0) {
+        return;
+    }
+    const u32 n = rescued.fetch_add(1, std::memory_order_relaxed);
+    if (n % 600 == 0) {
+        std::printf("GPU: indirect dispatch on a %s queue the old initiator check skipped (%u so "
+                    "far)\n",
+                    queue, n + 1);
+        std::fflush(stdout);
+    }
+}
+
 static std::span<const u32> NextPacket(std::span<const u32> span, size_t offset) {
     if (offset > span.size()) {
         LOG_ERROR(
@@ -1868,6 +1885,10 @@ Liverpool::Task Liverpool::ProcessGraphics(std::span<const u32> dcb, std::span<c
                 auto& cs_program = GetCsRegs();
                 const auto offset = dispatch_indirect->data_offset;
                 const auto size = sizeof(PM4CmdDispatchIndirect::GroupDimensions);
+                // bbport: the packet's own dispatch initiator, as DISPATCH_DIRECT's.
+                NoteIndirectInitiator(cs_program.dispatch_initiator,
+                                      dispatch_indirect->dispatch_initiator, "graphics");
+                cs_program.dispatch_initiator = dispatch_indirect->dispatch_initiator;
                 if (DebugState.DumpingCurrentReg()) {
                     DebugState.PushRegsDumpCompute(base_addr, reinterpret_cast<uintptr_t>(header),
                                                    cs_program);
@@ -2524,6 +2545,10 @@ Liverpool::Task Liverpool::ProcessCompute(std::span<const u32> acb, u32 vqid) {
             auto& cs_program = GetCsRegs();
             const auto ib_address = dispatch_indirect->Address<VAddr>();
             const auto size = sizeof(PM4CmdDispatchIndirect::GroupDimensions);
+            // bbport: the packet's own dispatch initiator, as DISPATCH_DIRECT's.
+            NoteIndirectInitiator(cs_program.dispatch_initiator,
+                                  dispatch_indirect->dispatch_initiator, "compute");
+            cs_program.dispatch_initiator = dispatch_indirect->dispatch_initiator;
             if (DebugState.DumpingCurrentReg()) {
                 DebugState.PushRegsDumpCompute(base_addr, reinterpret_cast<uintptr_t>(header),
                                                cs_program);

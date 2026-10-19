@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <dlfcn.h>
+#include <filesystem>
 #include <map>
+#include <set>
+#include <tuple>
 #include <unordered_set>
 #include <xxhash.h>
 #include "video_core/renderer_vulkan/ui_composition.h"
@@ -541,6 +544,8 @@ bool IsKnownFormat(AmdGpu::DataFormat data_fmt, AmdGpu::NumberFormat num_fmt) {
 }
 } // namespace
 
+static void TraceSkippedDraw(const char* why, const AmdGpu::Regs& regs);
+
 bool Rasterizer::FilterDraw() {
     const auto& regs = Regs();
     if (regs.color_control.mode == AmdGpu::ColorControl::OperationMode::EliminateFastClear) {
@@ -551,6 +556,7 @@ bool Rasterizer::FilterDraw() {
     if (regs.color_control.mode == AmdGpu::ColorControl::OperationMode::FmaskDecompress) {
         // TODO: check for a valid MRT1 to promote the draw to the resolve pass.
         LOG_TRACE(Render_Vulkan, "FMask decompression pass skipped");
+        TraceSkippedDraw("FMask decompression", regs);
         ScopedMarkerInsert("FmaskDecompress");
         return false;
     }
@@ -561,6 +567,7 @@ bool Rasterizer::FilterDraw() {
     }
     if (regs.primitive_type == AmdGpu::PrimitiveType::None) {
         LOG_TRACE(Render_Vulkan, "Primitive type 'None' skipped");
+        TraceSkippedDraw("primitive type None", regs);
         ScopedMarkerInsert("PrimitiveTypeNone");
         return false;
     }
@@ -1585,6 +1592,7 @@ void Rasterizer::Draw(bool is_indexed, u32 index_offset, const PreparedDraw* pre
                          prepared->reg_checksum == liverpool->gfx_reg_checksum);
     }
     if (!pipeline) {
+        TraceSkippedDraw("no pipeline", Regs());
         return;
     }
     if (pipelined && FilterDrawPasses()) {
@@ -1594,9 +1602,126 @@ void Rasterizer::Draw(bool is_indexed, u32 index_offset, const PreparedDraw* pre
     DrawRecord(pipeline, used_prepared, is_indexed, index_offset);
 }
 
+// bbport BB_TRACE_TEXTURES=<hash>[,...|0] (diagnostics): each texture those shaders (0: all) bind,
+// once per address and format: its size, data and number format, swizzle, tiling and type.
+static void TraceTexture(u64 shader, u32 slot, const AmdGpu::Image& tsharp) {
+    static const std::vector<u64> traced = [] {
+        std::vector<u64> out;
+        const char* env = std::getenv("BB_TRACE_TEXTURES");
+        for (const char* at = env; at && *at;) {
+            char* end = nullptr;
+            out.push_back(std::strtoull(at, &end, 16));
+            at = end && *end == ',' ? end + 1 : nullptr;
+        }
+        return out;
+    }();
+    if (traced.empty() ||
+        (traced[0] != 0 && std::ranges::find(traced, shader) == traced.end())) {
+        return;
+    }
+    static std::mutex trace_mutex;
+    static std::set<std::tuple<u64, u64, u32, u32>> seen;
+    std::scoped_lock lk{trace_mutex};
+    if (seen.size() >= 4000 || !seen.insert({shader, tsharp.Address(), u32(tsharp.GetDataFmt()),
+                                             u32(tsharp.GetNumberFmt())})
+                                   .second) {
+        return;
+    }
+    std::printf("Texture trace: shader %016llx slot %u at %#llx %ux%u data fmt %u num fmt %u "
+                "dst_sel %u%u%u%u tiling %u type %u\n",
+                (unsigned long long)shader, slot, (unsigned long long)tsharp.Address(),
+                u32(tsharp.width + 1), u32(tsharp.height + 1), u32(tsharp.GetDataFmt()),
+                u32(tsharp.GetNumberFmt()), u32(tsharp.dst_sel_x), u32(tsharp.dst_sel_y),
+                u32(tsharp.dst_sel_z), u32(tsharp.dst_sel_w), u32(tsharp.tiling_index),
+                u32(tsharp.type));
+    std::fflush(stdout);
+}
+
+// bbport BB_SKIP_TRACE=1 (diagnostics): each kind of draw the renderer drops (no pipeline, its
+// resources not bound) once per shader pair, with its stages, to find effects missing on screen;
+// with a running count per reason.
+static void TraceSkippedDraw(const char* why, const AmdGpu::Regs& regs) {
+    static const bool on = [] {
+        const char* env = std::getenv("BB_SKIP_TRACE");
+        return env && *env == '1';
+    }();
+    if (!on) {
+        return;
+    }
+    static std::mutex mutex;
+    static std::set<std::tuple<std::string, u64, u64>> seen;
+    static std::map<std::string, u64> counts;
+    const u64 vs = u64(regs.vs_program.address) << 8, ps = u64(regs.ps_program.address) << 8;
+    std::scoped_lock lk{mutex};
+    const u64 n = ++counts[why];
+    if (seen.size() < 2000 && seen.insert({why, vs, ps}).second) {
+        std::printf("Skipped draw (%s, %llu so far): stages %#x vs %#llx ps %#llx es %#llx gs %#llx "
+                    "ls %#llx hs %#llx prim %u gs_mode %#x onchip %u strmout %#x\n",
+                    why, (unsigned long long)n, u32(regs.stage_enable.raw),
+                    (unsigned long long)vs, (unsigned long long)ps,
+                    (unsigned long long)regs.es_program.address << 8,
+                    (unsigned long long)regs.gs_program.address << 8,
+                    (unsigned long long)regs.ls_program.address << 8,
+                    (unsigned long long)regs.hs_program.address << 8, u32(regs.primitive_type),
+                    u32(regs.vgt_gs_mode.mode), u32(regs.vgt_gs_mode.onchip),
+                    u32(regs.vgt_strmout_config.raw));
+        std::fflush(stdout);
+    } else if ((n & (n - 1)) == 0 && n >= 1024) {
+        std::printf("Skipped draws (%s): %llu so far\n", why, (unsigned long long)n);
+        std::fflush(stdout);
+    }
+}
+
+// bbport BB_SKIP_PS_FILE=<file> (diagnostics): draws whose pixel shader hash is listed in the file
+// (hexadecimal, any separators) are skipped; the file is read again once a frame when it changed,
+// so draws can be switched off in a running game to see what each one draws.
+static bool SkippedByShaderFile(const GraphicsPipeline* pipeline) {
+    static const char* path = std::getenv("BB_SKIP_PS_FILE");
+    if (!path) {
+        return false;
+    }
+    static std::vector<u64> hashes;
+    static u32 checked_frame = ~0u;
+    static std::filesystem::file_time_type stamp{};
+    const u32 frame = BbStats::frame_number.load(std::memory_order_relaxed);
+    if (frame != checked_frame) {
+        checked_frame = frame;
+        std::error_code ec;
+        const auto now = std::filesystem::last_write_time(path, ec);
+        if (ec) {
+            hashes.clear();
+        } else if (now != stamp) {
+            stamp = now;
+            hashes.clear();
+            if (FILE* f = std::fopen(path, "r")) {
+                char word[64];
+                while (std::fscanf(f, "%63s", word) == 1) {
+                    hashes.push_back(std::strtoull(word, nullptr, 16));
+                }
+                std::fclose(f);
+            }
+            std::printf("Skip file: %zu pixel shaders skipped\n", hashes.size());
+        }
+    }
+    const auto* ps = pipeline->GetStages()[u32(Shader::SwStage::Fragment)];
+    if (ps) {
+        // Every pixel shader drawn, once, for building the list.
+        static std::set<u64> seen;
+        if (seen.insert(ps->pgm_hash).second) {
+            std::printf("Skip file: pixel shader %016llx drawn (vs %016llx)\n",
+                        (unsigned long long)ps->pgm_hash,
+                        (unsigned long long)pipeline->GetStage(Shader::SwStage::Vertex).pgm_hash);
+        }
+    }
+    return ps && std::ranges::find(hashes, ps->pgm_hash) != hashes.end();
+}
+
 void Rasterizer::DrawRecord(const GraphicsPipeline* pipeline, const PreparedDraw* used_prepared,
                             bool is_indexed, u32 index_offset) {
     BB_SECTION(DrawRecord);
+    if (SkippedByShaderFile(pipeline)) {
+        return;
+    }
     buffer_cache.NewPacket();
     if (DrawPipe::OnStageB()) {
         FrameCapture::Poll();
@@ -1652,6 +1777,7 @@ void Rasterizer::DrawRecord(const GraphicsPipeline* pipeline, const PreparedDraw
     const bool inputs_resolved = draw_inputs.resolved;
     draw_inputs.pending = false;
     if (!bound) {
+        TraceSkippedDraw("resources not bound", Regs());
         return;
     }
     const auto state = BeginRendering(pipeline);
@@ -1842,6 +1968,7 @@ void Rasterizer::DrawIndirect(bool is_indexed, VAddr arg_address, u32 offset, u3
     };
     const GraphicsPipeline* pipeline = pipeline_cache.GetGraphicsPipeline(params, nullptr, true);
     if (!pipeline) {
+        TraceSkippedDraw("indirect, no pipeline", Regs());
         return;
     }
     const IndirectDraw indirect = {arg_address + offset, count_address, stride, max_count};
@@ -1854,6 +1981,9 @@ void Rasterizer::DrawIndirect(bool is_indexed, VAddr arg_address, u32 offset, u3
 
 void Rasterizer::DrawIndirectRecord(const GraphicsPipeline* pipeline, bool is_indexed,
                                     const IndirectDraw& indirect) {
+    if (SkippedByShaderFile(pipeline)) {
+        return;
+    }
     buffer_cache.NewPacket();
     if (DrawPipe::OnStageB()) {
         FrameCapture::Poll();
@@ -1874,6 +2004,7 @@ void Rasterizer::DrawIndirectRecord(const GraphicsPipeline* pipeline, bool is_in
                          UiComposition::NativeViewport(viewport.xscale * 2, viewport.yscale * 2));
     }
     if (!BindResources(pipeline)) {
+        TraceSkippedDraw("indirect, resources not bound", Regs());
         return;
     }
     const auto state = BeginRendering(pipeline);
@@ -3277,6 +3408,7 @@ void Rasterizer::BindTextures(const Shader::Info& stage, const PreparedStage* pr
 
         const auto data_fmt = tsharp.GetDataFmt();
         const auto num_fmt = tsharp.GetNumberFmt();
+        TraceTexture(stage.pgm_hash, image_index, tsharp);
         if (tsharp.Address() == 0 || data_fmt == AmdGpu::DataFormat::FormatInvalid) {
             image_bindings.emplace_back(VideoCore::ImageId{}, &image_desc_storage.emplace_back());
             image_binding_entries.push_back(nullptr);
