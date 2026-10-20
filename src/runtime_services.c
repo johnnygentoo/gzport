@@ -225,10 +225,24 @@ DIALOG(profile,3) DIALOG(commerce,4) DIALOG(friends,7)
 static ABI int32_t msg_init(void) { return dialog_init(1); }
 static ABI int32_t msg_status(void) { return dialog_status(1); }
 static ABI int32_t msg_term(void) { return dialog_term(1); }
-/* OrbisMsgDialogParam: base (0x30), size (8), mode (1 user message, 2 progress bar, 3 system). */
+/* OrbisMsgDialogParam: base (0x30), size (8), mode (1 user message, 2 progress bar, 3 system),
+ * user message (0x40: button type, message). A user message is answered with its first button
+ * (OK / Yes), except a Yes/No question right after a network ErrorDialog: that is the game's
+ * "retry?", which offline can only fail again (GODZILLA's King of Kaiju score upload asked it
+ * forever), so it is answered No. */
+#define MSG_BUTTON_YES 1
+#define MSG_BUTTON_NO 2
+static int network_error_shown;
+static int32_t msg_button=MSG_BUTTON_YES;
 static ABI int32_t msg_open(const unsigned char *param) {
-    uint32_t mode=0;
-    if (param) memcpy(&mode,param+0x38,4);
+    uint32_t mode=0, buttons=0;
+    const unsigned char *user=NULL;
+    if (param) { memcpy(&mode,param+0x38,4); memcpy(&user,param+0x40,8); }
+    if (mode==1 && user) memcpy(&buttons,user,4);
+    /* Button types 1 (Yes/No) and 7 (Yes/No, No in focus). */
+    msg_button=mode==1 && network_error_shown && (buttons==1 || buttons==7) ? MSG_BUTTON_NO : MSG_BUTTON_YES;
+    if (msg_button==MSG_BUTTON_NO) DTRACE("MsgDialog retry question after a network error: No\n");
+    network_error_shown=0;
     return dialog_open_mode(1,mode,mode==2);
 }
 static ABI int32_t save_init(void) { return dialog_init(2); }
@@ -270,7 +284,7 @@ static ABI int32_t friends_close(void) { return dialog_close(7); }
 static ABI int32_t msg_result(int32_t *result) {
     DTRACE("MsgDialog GetResult\n");
     if (!result) return (int32_t)0x80B80006; /* ARG_NULL */
-    result[0]=(int32_t)dialogs[1].mode; result[1]=0; result[2]=1; /* OK, the first button (Yes) */
+    result[0]=(int32_t)dialogs[1].mode; result[1]=0; result[2]=msg_button; /* OK / Yes, or No (msg_open) */
     return 0;
 }
 /* OrbisSaveDataDialogResult: mode, result, button, dir name* (0x10), param* (0x18), user data (0x20). */
@@ -287,11 +301,13 @@ static ABI int32_t save_result(unsigned char *result) {
 static ABI int32_t save_ready(void) { DTRACE("SaveDataDialog IsReadyToDisplay\n"); return 1; }
 static ABI int32_t save_progress(int32_t target,uint32_t rate) { DTRACE("SaveDataDialog progress %d: %u\n",target,rate); return 0; }
 static ABI int32_t cancelled_result(int32_t *result) { if (result) result[0]=1; return 0; }
-/* ErrorDialog: the system's error message for a code; the code is logged, the dialog finishes. */
+/* ErrorDialog: the system's error message for a code; the code is logged, the dialog finishes.
+ * A PSN error (0x8055xxxx) makes the next Yes/No MsgDialog a No (msg_open). */
 typedef struct { int32_t size, error_code, user, reserved; } ErrorDialogParam;
 static ABI int32_t error_dialog_init(void) { return dialog_init(6); }
 static ABI int32_t error_dialog_open(const ErrorDialogParam *param) {
     if (param) printf("Runtime: ErrorDialog for error 0x%08x\n",(uint32_t)param->error_code);
+    if (param && ((uint32_t)param->error_code>>16)==0x8055) network_error_shown=1;
     return dialog_open(6);
 }
 static ABI int32_t error_dialog_status(void) { return dialog_status(6); }
