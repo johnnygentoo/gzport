@@ -132,6 +132,78 @@ if [[ -f $root/out/libbbport_dlss.so ]]; then
     cp "$root"/out/libbbport_dlss.so "$root"/out/libnvidia-ngx-dlss.so.* \
         "$root"/out/NVIDIA-DLSS-LICENSE.txt "$appdir/share/bbport/dlss/"
 fi
+# Licenses of everything the package carries (MIT, BSD and zlib want their notices to go with the
+# binaries): gzport's, the components compiled into it, and the Arch packages whose libraries and
+# headers went in. share/bbport/licenses, and dist/...-LICENSES.txt with all of them in one file.
+lic=$d/licenses
+mkdir -p "$lic/components" "$lic/system"
+cp LICENSE "$lic/gzport-LICENSE.txt"
+while read -r name file; do
+    cp "$file" "$lic/components/$name.txt"
+done <<'LIST'
+shadPS4 gpu/shadps4/LICENSE
+FSR-Vulkan gpu/third_party/fsr-vulkan/LICENSE.txt
+FSR-Vulkan-NOTICE gpu/third_party/fsr-vulkan/NOTICE.md
+FSR-Vulkan-UPSTREAM gpu/third_party/fsr-vulkan/UPSTREAM.md
+AMD-FidelityFX-SDK gpu/third_party/fsr-vulkan/upstream/ffx-1.1.4/sdk/LICENSE.txt
+Dear-ImGui gpu/third_party/imgui/LICENSE.txt
+LibAtrac9 third_party/LibAtrac9/LICENSE
+sirit gpu/third_party/sirit/LICENSE.txt
+SPIRV-Headers gpu/third_party/sirit/externals/SPIRV-Headers/LICENSE
+half gpu/third_party/half/LICENSE.txt
+cpp-httplib gpu/third_party/httplib/LICENSE
+DejaVu-fonts gpu/third_party/fonts/LICENSE-DejaVu.txt
+LIST
+# Notices at the top of the sources themselves: AMD's GCN register headers, FSR 1, and AMD's FSR
+# SDK 2.3 files in FSR-Vulkan (each carries this MIT notice).
+for pair in AMD-GCN-headers:gpu/third_party/gcn/include/gcn/si_ci_vi_merged_offset.h \
+            AMD-FSR1:gpu/shadps4/video_core/host_shaders/fsr/ffx_a.h \
+            AMD-FSR-SDK-2.3:gpu/third_party/fsr-vulkan/upstream/ffx-2.3.0/Kits/FidelityFX/api/include/ffx_api_loader.h; do
+    awk '/^[[:space:]]*($|\/\/|\/\*|\*)/ {print; next} {exit}' "${pair#*:}" > "$lic/components/${pair%%:*}.txt"
+done
+if command -v pacman >/dev/null; then
+    # The packages owning the libraries quick-sharun collected (lib/ mirrors /usr/lib), the
+    # programs, and the header-only and static libraries the build compiled in.
+    {
+        find "$appdir/lib" -type f -name '*.so*' -printf '/usr/lib/%P\n' | while read -r f; do
+            if [[ -e $f ]]; then echo "$f"; fi
+        done | xargs -r pacman -Qqo 2>/dev/null || true
+        pacman -Qqo "$(command -v python3)" "$(command -v vulkaninfo)" 2>/dev/null || true
+        printf '%s\n' fmt magic_enum robin-map xxhash vulkan-memory-allocator boost zydis miniz \
+            glslang spirv-cross spirv-headers xbyak protobuf nlohmann-json vulkan-headers
+    } | sort -u > "$work/packages"
+    printf '%s\n' 'Arch Linux packages whose libraries or headers are in this AppImage: name, version,' \
+        'licenses. Their sources: https://gitlab.archlinux.org/archlinux/packaging/packages/<name>' '' \
+        > "$lic/system/PACKAGES.txt"
+    while read -r pkg; do
+        pacman -Qi "$pkg" >/dev/null 2>&1 || continue
+        licenses=$(LC_ALL=C pacman -Qi "$pkg" | sed -n 's/^Licenses *: //p')
+        echo "$(pacman -Q "$pkg")  $licenses" >> "$lic/system/PACKAGES.txt"
+        if [[ -d /usr/share/licenses/$pkg ]]; then cp -rL "/usr/share/licenses/$pkg" "$lic/system/"; fi
+        # Licenses named by SPDX identifier only: their texts from the licenses package.
+        for id in $(grep -oE '[A-Za-z0-9.+-]+' <<<"$licenses"); do
+            if [[ -f /usr/share/licenses/spdx/$id.txt ]]; then
+                mkdir -p "$lic/system/spdx"; cp "/usr/share/licenses/spdx/$id.txt" "$lic/system/spdx/"
+            fi
+        done
+    done < "$work/packages"
+fi
+cat > "$lic/README.txt" <<'EOF'
+GODZILLA for Linux (gzport) is free software under the GNU GPL v2 or later (gzport-LICENSE.txt).
+Its complete source code: https://github.com/johnnygentoo/gzport (the tag of this release).
+
+components/  the projects compiled into gzport, with their licenses and notices
+system/      the Arch Linux packages whose libraries or headers this AppImage carries
+             (PACKAGES.txt: name, version, licenses; the texts in their folders and in spdx/)
+
+The AppImage runtime and sharun (github.com/VHSgunzo/uruntime, github.com/VHSgunzo/sharun, via
+github.com/pkgforge-dev/Anylinux-AppImages) are under their own licenses.
+No part of the game GODZILLA is included.
+EOF
+mkdir -p "$root/dist"
+find "$lic" -type f | sort | while read -r f; do
+    printf '\n==== %s ====\n\n' "${f#"$lic"/}"; cat "$f"
+done > "$root/dist/GODZILLA-gzport-x86_64.AppImage-LICENSES.txt"
 if [[ -n $net ]]; then
     module=$(find "$appdir/lib" -name libbbnet.so -print -quit)
     [[ -n $module ]] || { echo 'libbbnet.so is missing from the AppDir' >&2; exit 1; }
