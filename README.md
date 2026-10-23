@@ -9,16 +9,20 @@ Linux fork of [bbport](https://github.com/deadinside28/bloodborne_pc), the nativ
 by deadinside28. The runtime, the GPU translation, the upscalers and the launcher come from there;
 gzport points them at GODZILLA and drops what only Bloodborne had.
 
-> **No game files are included.** You need your own decrypted dump of GODZILLA, the North
-> American release `CUSA02046`, with update 1.01. This project is not affiliated with Toho Co.,
-> Ltd., Bandai Namco Entertainment or Sony Interactive Entertainment. GODZILLA is a trademark of
-> Toho Co., Ltd.
+> [!IMPORTANT]
+> **No game files are included, and none ever will be.** You need your own copy of GODZILLA, the
+> North American release `CUSA02046` with update 1.01, dumped from your own PS4. Do not ask for
+> or share game files, saves or keys here. gzport is not affiliated with Toho Co., Ltd., Bandai
+> Namco Entertainment or Sony Interactive Entertainment; GODZILLA is a trademark of Toho Co.,
+> Ltd. Read the full [legal notice](LEGAL.md).
 
 ## Status
 
-The game boots, plays its intro movie, title screen and missions with music, voices and effects,
-subtitles in its own font, saves and trophies. Tested on Linux with an AMD Radeon RX 7800 XT
-(Mesa/RADV) and a DualSense; a full play-through has not been verified yet.
+The whole game plays: the story mode (God of Destruction) from the intro movie to the ending,
+King of Kaiju, the other modes, with music, voices, movies, subtitles in its own font, saves and
+trophies. A full solo play-through was done on Linux with an AMD Radeon RX 7800 XT (Mesa/RADV)
+and a DualSense. Versus over the LAN was played between three PCs (RX 7800 XT, RX 580 and
+GeForce RTX 3050).
 
 - **60 FPS**, the game's own rate (it flips every vblank). A higher frame rate needs a patch for
   the 1.01 executable that is not written yet; the launcher offers it once `patches/Godzilla.xml`
@@ -27,9 +31,11 @@ subtitles in its own font, saves and trophies. Tested on Linux with an AMD Radeo
   the whole game renders at that size: a patch at start sets the frame size the game builds its
   render targets and display buffers from, and the HUD scales with it. 1440p and 4K hold 60 FPS
   on an RX 7800 XT.
-- **Upscalers (FSR 3.1/4, DLSS, TAA) are off** for this game: they need its scene color, depth
-  and motion, which the GPU library knows for Bloodborne only. Mapping GODZILLA's frame
-  (PhyreEngine) is the next step for them.
+- **Upscalers (FSR 3.1/4, DLSS, TAA), experimental:** the game's camera, scene, motion and HUD
+  are mapped for them (PhyreEngine's frame), so the scene renders at a lower size and is upscaled
+  while the HUD and the movies are drawn at the output size.
+- **Known gaps:** friend search in versus (random search works), and online rankings: offline,
+  King of Kaiju's score upload is skipped.
 
 ## What gzport adds to bbport
 
@@ -48,8 +54,8 @@ The runtime implements the PS4 libraries GODZILLA uses that Bloodborne does not:
 - **Launcher** (GTK 4 / libadwaita) with every setting in one window, in English, Spanish,
   Italian, French, German, Portuguese, Russian and Simplified Chinese. It shows your dump's own
   icon and checks the game folder (the 1.01 executable, the files a whole extraction has).
-- **Output from 720p to 4K**, rendered natively (above). Settings also in the in-game overlay
-  (Insert or L3+R3).
+- **Output from 720p to 4K**, rendered natively (above), and the temporal upscalers. Settings
+  also in the in-game overlay (Insert or L3+R3).
 - **Two memory models:** the new one, where the GPU works with the game's memory as in a PC game
   (the default on AMD), and the one of 0.3 (the default elsewhere); the launcher switches them.
 - **Controls:** keyboard and mouse or any SDL gamepad, every button remappable, sticks swapped,
@@ -83,7 +89,8 @@ and `BB_DISCORD_CLIENT_ID` (a Discord application of your own named GODZILLA) to
 
 ### 1. The game folder
 
-Dump the game (`CUSA02046`, version 1.00) and its 1.01 update from your PS4. The game's files are
+Dump the game (`CUSA02046`, version 1.00) and its 1.01 update from your own PS4 (gzport cannot
+help you get them elsewhere; see the [legal notice](LEGAL.md)). The game's files are
 at the folder's root: `eboot.bin`, `sce_sys/`, `sce_module/`, `sound/` and the `*.pac` archives.
 Then merge the update into the game: copy everything from the update's dump (for example
 `CUSA02046-patch`) into the game folder, replacing files (`eboot.bin` and `sce_sys` too). Check it:
@@ -97,15 +104,12 @@ update and merges them for you.
 
 ### 2. Build and run
 
-On Arch Linux (or CachyOS, Manjaro…):
+[BUILD.md](BUILD.md) has the dependencies for each distribution, the build options, the tests
+and what to do when a build fails. In short, on Arch Linux:
 
 ```bash
-sudo pacman -S --needed base-devel cmake ninja python python-gobject gtk4 libadwaita sdl3 \
-    vulkan-headers vulkan-icd-loader glslang spirv-headers spirv-cross ffmpeg boost fmt \
-    robin-map xxhash zydis miniz protobuf nlohmann-json openssl miniupnpc python-pillow ttf-dejavu \
-    freetype2 noto-fonts noto-fonts-cjk
-paru -S magic_enum vulkan-memory-allocator xbyak   # from the AUR
-
+git clone --recursive https://github.com/<owner>/<repository>.git gzport && cd gzport
+# install the packages listed in BUILD.md, then:
 bash build.sh
 launcher/bb-launcher.sh          # or launcher/install-desktop.sh for a menu entry
 ```
@@ -154,14 +158,26 @@ drivers, so the shortcut starts the game outside it with `flatpak-spawn --host`.
 
 ## Credits
 
-- [deadinside28/bloodborne_pc](https://github.com/deadinside28/bloodborne_pc): **bbport**, the
-  native port everything here is built on, and almost all of the work behind it. Its README, with
-  the technical details, is in [BBPORT.md](BBPORT.md).
-- [ayozetr/bloodborne_linux](https://github.com/ayozetr/bloodborne_linux): the Linux fork of bbport
-  gzport starts from, with its launcher, upscalers, memory models, trophies, PKG install, save
-  import and AppImage, and everyone thanked there.
-- [Supermedo/bloodborne_pc](https://github.com/Supermedo/bloodborne_pc): the Windows port, whose
-  DLSS support and Add to Steam came to Linux in bloodborne_linux.
+gzport exists because of **bbport**. Its approach (run the PS4 game's own code natively, translate
+its graphics to Vulkan, write the system libraries it calls) and nearly all of the code under
+this repository's runtime, GPU library and launcher are the work of the people below. Their
+commits are kept in this repository's history, under their own names.
+
+- **deadinside28** — [deadinside28/bloodborne_pc](https://github.com/deadinside28/bloodborne_pc):
+  **bbport**, the native Bloodborne port everything here is built on, and almost all of the work
+  behind it. Its README, with the technical details, is in [BBPORT.md](BBPORT.md).
+- **ayozetr** — [ayozetr/bloodborne_linux](https://github.com/ayozetr/bloodborne_linux): the Linux
+  fork of bbport gzport starts from, with its launcher, upscalers, memory models, trophies, PKG
+  install, save import and AppImage, and everyone thanked there.
+- **Supermedo** — [Supermedo/bloodborne_pc](https://github.com/Supermedo/bloodborne_pc): the
+  Windows port, whose DLSS support and Add to Steam came to Linux in bloodborne_linux.
+- The other contributors to bbport and bloodborne_linux: **0xCydral**, **devilismyfriend**,
+  **artemkaVG**, **andrecabralgit** and **obrikash**, and the testers credited in the launcher's
+  **About** page (willthehuman, Joomzie, Kaka556Kevin, nr1971, segasonicye, Monochrome0907 and
+  the others there).
+- [shadnet-p2p](https://github.com/Wozzardman/shadnet-p2p) by Wozzardman: the matchmaking server
+  of versus over the LAN, and shadp2p (a shadPS4 fork) for the online module's network and PSN
+  libraries.
 - [shadPS4](https://github.com/shadps4-emu/shadPS4): the renderer and shader recompiler.
 - [IFreemz/shadPS4-Bloodborne-DLSS-FSR](https://github.com/IFreemz/shadPS4-Bloodborne-DLSS-FSR):
   the DLSS bridge, and the [NVIDIA DLSS SDK](https://github.com/NVIDIA/DLSS).
@@ -178,7 +194,9 @@ drivers, so the shortcut starts the game outside it with `flatpak-spawn --host`.
 
 Full list of components and licenses: [BBPORT.md](BBPORT.md#credits-and-licenses).
 
-## License
+## License and legal notice
 
-GNU GPL v2 or later ([LICENSE](LICENSE)). Third-party components keep their own licenses. NVIDIA
-and DLSS are trademarks of NVIDIA Corporation. GODZILLA is a trademark of Toho Co., Ltd.
+GNU GPL v2 or later ([LICENSE](LICENSE)), with no warranty. Third-party components keep their own
+licenses. The repository holds source code only: no game files, saves, keys or PlayStation
+system software, and the `.gitignore` keeps them out. You provide your own legal dump of the game.
+The [legal notice](LEGAL.md) has the details and the trademarks.

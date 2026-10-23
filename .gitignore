@@ -1,49 +1,94 @@
-out/
-__pycache__/
-user/
+# gzport never distributes anything of the game: no game files, no saves, no keys, no dumps.
+# Everything below stays on your PC. Check with `git status --ignored` before a commit.
+
+# ---- Game dumps and PS4 content ----
+# Dump folders at the top (CUSA02046, CUSA02046-patch, CUSA02046-full, ...), any title ID
+/CUSA*/
+/[A-Z][A-Z][A-Z][A-Z][0-9][0-9][0-9][0-9][0-9]*/
+# Add-ons (DLC) and the folders the launcher fills from .pkg files
+/dlc/
+/addcont/
+# Game files anywhere in the tree
+eboot.bin
+*.elf
+*.self
+*.prx
+*.sprx
+param.sfo
+*.sfo
+*.trp
+*.pac
+*.at9
 *.mp4
-bbport.ini
-fsr4_shaders/
-pgo/
-*.png
+*.pkg
+*.dcx
+sce_sys/
+sce_module/
+# Archives of game or user files
+*.7z
+/*.zip
+*.rar
+
+# ---- Saves, trophies and everything a run writes ----
+# The user folder of runs from source: savedata, trophies, shader cache, add-on links
+user/
+savedata/
+savedata-backups/
+SAVEDATA*/
+*.sav
+# Logs of runs (they hold your paths, your GPU and sometimes your account name)
+/logs/
 last_run.log
-dist/
-packaging/runtime-paths.nix
-fsr4_411/
-vkd3d-proton.cache
-tools/fsr4cap/*.exe
+/message*.txt
 perf.data
-# Local leftovers: patch backups, generated SPIR-V, analysis outputs, test saves and routes
-*.orig
+
+# ---- Settings, accounts and keys ----
+# Your settings: the game's ini and the launcher's (when kept in the checkout)
+bbport.ini
+*.ini.local
+settings.json
+# Environment files (accounts, passwords, server keys)
+.env
+.env.*
+*.env
+# Keys and account files: trophy key, shadNet passwords, registration keys, certificates
+*.key
+*.pem
+*.p12
+accounts.txt
+registration.key
+trophy_key*
+TrophyKey*
+
+# ---- Build outputs ----
+out/
+/dist/
+__pycache__/
+*.pyc
+pgo/
 /*.spv
+packaging/runtime-paths.nix
+vkd3d-proton.cache
+*.orig
+
+# ---- Third-party files you provide yourself (never redistributed) ----
+# AMD FSR 4.1.1 (built from your own DLLs) and NVIDIA DLSS
+fsr4_411/
+fsr4_shaders/
+*.dll
+tools/fsr4cap/*.exe
+*.png
+mods.json
+patches.json
+/mods/
+
+# ---- Local work ----
+# Agent worktrees, scratch helpers, inherited Bloodborne leftovers
+/.claude/
+/scratch/
 /1060/
 /docs/savedata_route/
 /docs/route*.txt
 /docs/route_run.log
 /bloodborne_upscalers_*.md
-mods.json
-patches.json
-# The mods folder of runs from source (the launcher's default, DATA_DIR/mods)
-/mods/
-# Local: game logs, messages and archives from users, internal plans
-/logs/
-/message*.txt
-/*.zip
 /docs/ISSUE_ACTION_PLAN_*.md
-# AMD FidelityFX DLLs (FSR 4.1.1 is built from the user's own): never in the repository
-*.dll
-# Game files and dumps: never in the repository
-eboot.bin
-param.sfo
-*.pkg
-*.dcx
-*.7z
-/CUSA*/
-/fsr4_411
-/fsr4_shaders
-
-# Godzilla dumps (never committed)
-/CUSA*/
-/fsr4_411
-/fsr4_shaders
-/.claude/

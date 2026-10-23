@@ -5,15 +5,15 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting. Before you start, [docs/TROUBLESHOOTING.md](https://github.com/ayozetr/bloodborne_linux/blob/main/docs/TROUBLESHOOTING.md) covers the common problems.
+        Thanks for reporting. BUILD.md in the repository covers build problems.
 
-        Only your own dump of the game with the 1.09 update is supported. Do not ask for or link game files.
+        Only your own dump of GODZILLA (CUSA02046) with the 1.01 update is supported. Do not ask for, attach or link game files, saves or keys: such issues are closed (see LEGAL.md).
   - type: input
     id: version
     attributes:
       label: Version
       description: The launcher's **About** page shows it.
-      placeholder: 0.51-linux.2
+      placeholder: 0.1
     validations:
       required: true
   - type: dropdown
@@ -52,24 +52,23 @@ body:
       label: How to make it happen
       description: Where in the game, and what you did right before. Say if it happens every time.
       placeholder: |
-        1. Load the save at the Cathedral Ward lamp
-        2. Walk towards Old Yharnam
-        3. The game closes during the load
+        1. King of Kaiju, stage 16, as Godzilla
+        2. Win the stage
+        3. The screen stays black after the results
   - type: dropdown
     id: online
     attributes:
       label: Online
       options:
         - Offline
-        - Online, shadPS4's public server
-        - Online, my own server
+        - Versus over the LAN (my own server)
   - type: textarea
     id: log
     attributes:
       label: Log
       description: |
         In the launcher's **Log** page, **Export log…** and drag the file here (or **Copy** and paste it).
-        Do not paste your shadNet password or your trophy key anywhere in the issue.
+        Do not paste your shadNet password, your trophy key or your save anywhere in the issue.
       placeholder: Drag the exported log here.
     validations:
       required: true
@@ -78,7 +77,7 @@ body:
     attributes:
       label: Checks
       options:
-        - label: I use my own dump of Bloodborne with the 1.09 update.
+        - label: I use my own dump of GODZILLA (CUSA02046) with the 1.01 update.
           required: true
         - label: I searched the existing issues for the same problem.
           required: true
