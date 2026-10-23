@@ -174,7 +174,7 @@ def main():
     parser.add_argument('--mods-dir', required=True, type=Path)
     parser.add_argument('--config', type=Path)
     parser.add_argument('--enabled', choices=('0', '1'), default='1')
-    # The menu's button prompts and gestures menu (menu_prompts.py), each a folder,
+    # Folders laid under the mods (Bloodborne's button prompts and gestures menu once), each a folder,
     # os.pathsep-separated: settings of their own, so laid first and kept with mods switched off.
     parser.add_argument('--ui-mods', default='')
     args = parser.parse_args()

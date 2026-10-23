@@ -108,7 +108,7 @@ update and merges them for you.
 and what to do when a build fails. In short, on Arch Linux:
 
 ```bash
-git clone --recursive https://github.com/<owner>/<repository>.git gzport && cd gzport
+git clone --recursive https://github.com/johnnygentoo/gzport.git gzport && cd gzport
 # install the packages listed in BUILD.md, then:
 bash build.sh
 launcher/bb-launcher.sh          # or launcher/install-desktop.sh for a menu entry

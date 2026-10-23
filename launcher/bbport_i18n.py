@@ -397,7 +397,7 @@ EN = {
     # Discord
     "Статус в Discord": "Discord status",
     "«Играет в Bloodborne» в профиле Discord, онлайн или офлайн": "“Playing Bloodborne” on your Discord profile, online or offline",
-    # Button prompts (scripts/menu_prompts.py)
+    # Button prompts (inherited from bloodborne_linux)
     "Применяется при запуске игры": "Applies when the game starts",
     "Иконки кнопок": "Button prompts",
     "Поменять местами A и B": "Swap A and B",
@@ -1040,7 +1040,7 @@ PT_BR = {
     # Discord
     "Статус в Discord": "Status no Discord",
     "«Играет в Bloodborne» в профиле Discord, онлайн или офлайн": "“Jogando Bloodborne” no seu perfil do Discord, online ou offline",
-    # Button prompts (scripts/menu_prompts.py)
+    # Button prompts (inherited from bloodborne_linux)
     "Клавиатура": "Teclado",
     "Применяется при запуске игры": "Aplicado ao iniciar o jogo",
     "Иконки кнопок": "Ícones dos botões",
@@ -1839,7 +1839,7 @@ ES = {
     # Discord
     "Статус в Discord": "Estado en Discord",
     "«Играет в Bloodborne» в профиле Discord, онлайн или офлайн": "«Jugando a Bloodborne» en tu perfil de Discord, online o sin conexión",
-    # Button prompts (scripts/menu_prompts.py)
+    # Button prompts (inherited from bloodborne_linux)
     "Применяется при запуске игры": "Se aplica al iniciar el juego",
     "Иконки кнопок": "Iconos de botones",
     "Поменять местами A и B": "Intercambiar A y B",
@@ -2557,7 +2557,7 @@ IT = {
     # Discord
     "Статус в Discord": "Stato su Discord",
     "«Играет в Bloodborne» в профиле Discord, онлайн или офлайн": "“Sta giocando a Bloodborne” sul tuo profilo Discord, online o offline",
-    # Button prompts (scripts/menu_prompts.py)
+    # Button prompts (inherited from bloodborne_linux)
     "Применяется при запуске игры": "Si applica all'avvio del gioco",
     "Иконки кнопок": "Icone dei pulsanti",
     "Поменять местами A и B": "Scambia A e B",
@@ -3275,7 +3275,7 @@ FR = {
     # Discord
     "Статус в Discord": "Statut Discord",
     "«Играет в Bloodborne» в профиле Discord, онлайн или офлайн": "« Joue à Bloodborne » sur votre profil Discord, en ligne ou hors ligne",
-    # Button prompts (scripts/menu_prompts.py)
+    # Button prompts (inherited from bloodborne_linux)
     "Применяется при запуске игры": "S'applique au lancement du jeu",
     "Иконки кнопок": "Icônes des boutons",
     "Поменять местами A и B": "Inverser A et B",
@@ -3993,7 +3993,7 @@ DE = {
     # Discord
     "Статус в Discord": "Discord-Status",
     "«Играет в Bloodborne» в профиле Discord, онлайн или офлайн": "„Spielt Bloodborne“ in deinem Discord-Profil, online oder offline",
-    # Button prompts (scripts/menu_prompts.py)
+    # Button prompts (inherited from bloodborne_linux)
     "Применяется при запуске игры": "Wird beim Spielstart übernommen",
     "Иконки кнопок": "Tastensymbole",
     "Поменять местами A и B": "A und B tauschen",

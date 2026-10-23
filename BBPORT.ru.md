@@ -1,3 +1,8 @@
+> **Примечание gzport:** это README самого bbport (deadinside28/bloodborne_pc), сохранённый ради
+> технических подробностей и благодарностей. Он о Bloodborne; часть ссылок ведёт на документы о
+> Bloodborne, которых в gzport нет (они в истории этого репозитория и в bbport). **Вопросы о gzport
+> (GODZILLA) — в issues gzport на GitHub**, не в Discord bbport и не в shadPS4.
+
 ДАННЫЙ ПРОЕКТ НЕ ИМЕЕТ ОТНОШЕНИЯ К SHADPS4. ВСЕ ВОПРОСЫ, СВЯЗАННЫЕ С ЭТИМ ПРОЕКТОМ - ПИШИТЕ НА ДИСКОРД СЕРВЕР https://discord.gg/KYZRKk9CB, А НЕ НА СЕРВЕР SHADPS4
 
 # bbport — нативный порт Bloodborne для Linux

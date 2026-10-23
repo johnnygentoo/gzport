@@ -1,3 +1,9 @@
+> **gzport note:** this is bbport's own README (deadinside28/bloodborne_pc), kept for its technical
+> details and its credits. It is about Bloodborne, some of its links point to Bloodborne documents
+> that gzport does not carry (they are in this repository's history and in bbport), and its
+> Discord is bbport's. **Questions about gzport (GODZILLA) go to gzport's GitHub issues**, not to
+> bbport's Discord and not to shadPS4.
+
 THIS PROJECT IS NOT RELATED TO SHADPS4. ALL QUESTIONS RELATED TO THIS PROJECT SHOULD BE SENT TO THE DISCORD SERVER https://discord.gg/KYZRKk9CB, NOT TO THE SHADPS4 SERVER.
 
 

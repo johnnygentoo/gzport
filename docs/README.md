@@ -2,39 +2,26 @@
 
 ## For players
 
-- [COMPATIBILITY.md](COMPATIBILITY.md): which releases of Bloodborne run, and which have been
-  checked.
-- [MODS.en.md](MODS.en.md): file mods and third-party patches.
-- [ONLINE.md](ONLINE.md): online play and co-op: the account, the bells, the ports.
-- [SERVER.md](SERVER.md): hosting your own co-op server (shadnet-p2p) for a group of friends.
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md): common problems and what to do.
+- [../BUILD.md](../BUILD.md): building gzport, its tests, and what to do when a build fails.
+- [LAN-VERSUS.md](LAN-VERSUS.md): versus over the LAN: the server, the accounts, the launcher's
+  **Online** page.
+- [SERVER.md](SERVER.md): running the shadNet server (written for Bloodborne's co-op; the server
+  and its Docker image are the same for GODZILLA, with the versus patch).
+- [DEBUGGING.md](DEBUGGING.md): catching a crash with a debugger.
 
-## For this fork
+## bbport's design notes
 
-- [RELEASE_TEMPLATE.md](RELEASE_TEMPLATE.md): the format of every release's notes.
+These come from [bbport](https://github.com/deadinside28/bloodborne_pc) by deadinside28 and
+[bloodborne_linux](https://github.com/ayozetr/bloodborne_linux) by ayozetr. They describe the
+runtime and the GPU library gzport runs on, so they still apply; their examples are
+Bloodborne's. Many are in Russian (`.ru.md`). Bloodborne's changelogs, roadmap and session notes
+are in this repository's history and in those projects.
 
-## bbport's development notes
-
-Everything else here comes from [bbport](https://github.com/deadinside28/bloodborne_pc) by
-deadinside28, kept as it is so that its updates merge cleanly. Many are in Russian (`.ru.md`, or
-a Russian title).
-
-- **What changed in each version:** [CHANGES_0.5.md](CHANGES_0.5.md),
-  [CHANGES_0.5-pre4.md](CHANGES_0.5-pre4.md), [CHANGES_0.5-pre3.md](CHANGES_0.5-pre3.md),
-  [CHANGES_0.5-pre2.md](CHANGES_0.5-pre2.md), [CHANGES_after_0.4.md](CHANGES_after_0.4.md),
-  [CHANGES_0.4.md](CHANGES_0.4.md), [CHANGES_2026-10-06.md](CHANGES_2026-10-06.md) (0.3),
-  [CHANGES_2026-10-03.md](CHANGES_2026-10-03.md), [CHANGES_2026-10-02.md](CHANGES_2026-10-02.md).
-- **Where the port is going:** [ROADMAP.md](ROADMAP.md),
+- **Translation and the GPU commands:** [TRANSLATOR_ARCHITECTURE.ru.md](TRANSLATOR_ARCHITECTURE.ru.md),
   [EMULATION_REMOVAL_PLAN.ru.md](EMULATION_REMOVAL_PLAN.ru.md),
-  [TRANSLATOR_ARCHITECTURE.ru.md](TRANSLATOR_ARCHITECTURE.ru.md).
-- **Memory and GPU commands:** [MEMORY_MODULE_PLAN.ru.md](MEMORY_MODULE_PLAN.ru.md),
-  [NVIDIA_MEMORY_MODEL.ru.md](NVIDIA_MEMORY_MODEL.ru.md),
   [TRANSLATION_GPU_COPY_LABELS.ru.md](TRANSLATION_GPU_COPY_LABELS.ru.md),
   [parallel_gpu.md](parallel_gpu.md).
+- **Memory models:** [MEMORY_MODULE_PLAN.ru.md](MEMORY_MODULE_PLAN.ru.md),
+  [NVIDIA_MEMORY_MODEL.ru.md](NVIDIA_MEMORY_MODEL.ru.md).
 - **Upscaling, TAA and motion vectors:** [upscaler.md](upscaler.md),
-  [DEPTH_ADAPTIVE_TAA.md](DEPTH_ADAPTIVE_TAA.md),
-  [TEMPORAL_REVIEW_2026-10-01.md](TEMPORAL_REVIEW_2026-10-01.md),
-  [motion_vectors.md](motion_vectors.md).
-- **Mods, patches and TAA sharpness** (the original of MODS.en.md): [MODS.md](MODS.md).
-- **The first experiments:** [DEVELOPMENT_LOG.ru.md](DEVELOPMENT_LOG.ru.md), and the session
-  notes in [history/](history/).
+  [DEPTH_ADAPTIVE_TAA.md](DEPTH_ADAPTIVE_TAA.md), [motion_vectors.md](motion_vectors.md).

@@ -46,7 +46,7 @@ works with the same list (this project is developed on it).
 ## 2. Get the source
 
 ```bash
-git clone --recursive https://github.com/<owner>/<repository>.git gzport
+git clone --recursive https://github.com/johnnygentoo/gzport.git gzport
 cd gzport
 ```
 

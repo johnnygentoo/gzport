@@ -1,5 +1,10 @@
 # Hosting your own co-op server
 
+> **GODZILLA:** this guide was written for Bloodborne's co-op in bloodborne_linux. The server and
+> its Docker image are the same for GODZILLA's versus mode, which also needs the versus patch
+> (the image applies it). Start with [LAN-VERSUS.md](LAN-VERSUS.md); the Bloodborne parts below
+> (bells, summons, The Hunter's Dream) do not apply.
+
 Bells and summons go through a shadNet server. shadPS4's public one (`srv.shadps4.net`) no longer
 accepts bbport builds, and the public pool for bbport is now The Hunter's Dream's, through
 bbbridge (the launcher's **Online** page; [README](../README.md#online-play)). A group of friends

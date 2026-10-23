@@ -41,11 +41,7 @@ chmod +x "$quick"
 # share/bbport/{run.sh,scripts,...,bin/bb-probe}; bin/ is the AppImage's own bin directory.
 d=$appdir/share/bbport
 cp run.sh "$d/"
-cp -r scripts patches fsr4_shaders launcher assets "$d/"
-# The keyboard's button prompts (scripts/menu_prompts.py) are drawn with Pillow in this font.
-font=$(fc-match -f '%{file}' 'DejaVu Sans:bold')
-[[ $font == */DejaVuSans-Bold.ttf ]] || { echo 'DejaVu Sans Bold not found (ttf-dejavu).' >&2; exit 1; }
-install -Dm644 "$font" "$d/fonts/DejaVuSans-Bold.ttf"
+cp -r scripts patches fsr4_shaders launcher "$d/"
 mkdir -p "$d/tools"
 cp -r tools/fsr4cap "$d/tools/"
 # bbbridge (GPL-3.0-or-later): its licence and notices next to the port; its source is bbbridge/.
