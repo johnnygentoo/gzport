@@ -74,7 +74,9 @@ fi
 # Cargo.lock. Needs cargo; without it the launcher asks for a game folder only.
 pkgextract_rev=f430ce1634fc7953834b545a3946bfbd5fa216fa
 if [[ ! -x out/pkgextract/bin/pkgextract ]] && command -v cargo >/dev/null; then
-    if cargo install --quiet --locked --root out/pkgextract \
+    # Rust keeps its sources' paths for panic messages: the builder's home folder (the crates under
+    # ~/.cargo) is written as ~ instead, so a published package does not carry it.
+    if RUSTFLAGS="${RUSTFLAGS:-} --remap-path-prefix=$HOME=~" cargo install --quiet --locked --root out/pkgextract \
         --git https://github.com/paulomanrique/ps4-pkg-extractor --rev "$pkgextract_rev" pkgextract \
         >out/pkgextract-build.log 2>&1; then
         echo 'PKG extractor: out/pkgextract/bin/pkgextract'
