@@ -18,8 +18,11 @@ for driver in radeon intel; do
     [[ -f /usr/share/vulkan/icd.d/${driver}_icd.json ]] || {
         echo "Mesa's $driver Vulkan driver is not installed: pacman -S vulkan-$driver" >&2; exit 1; }
 done
-# FSR 4 assets ship with the package (downloaded once; files already there are kept).
-bash tools/fetch_fsr4_assets.sh
+# FSR 4's assets (fsr4_shaders, from a third-party build of AMD's FSR 4 source) are left out of the
+# package unless BB_APPIMAGE_FSR4=1: a published AppImage does not redistribute them. Without
+# them the launcher does not offer FSR 4; FSR 3.1 and TAA remain.
+fsr4=
+if [[ ${BB_APPIMAGE_FSR4:-0} == 1 ]]; then bash tools/fetch_fsr4_assets.sh; fsr4=fsr4_shaders; fi
 root=$PWD
 work=$root/out/appimage
 appdir=$work/AppDir
@@ -41,7 +44,7 @@ chmod +x "$quick"
 # share/bbport/{run.sh,scripts,...,bin/bb-probe}; bin/ is the AppImage's own bin directory.
 d=$appdir/share/bbport
 cp run.sh "$d/"
-cp -r scripts patches fsr4_shaders launcher "$d/"
+cp -r scripts patches $fsr4 launcher "$d/"
 mkdir -p "$d/tools"
 cp -r tools/fsr4cap "$d/tools/"
 find "$d" -name __pycache__ -type d -prune -exec rm -rf {} +

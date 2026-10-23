@@ -104,8 +104,12 @@ ignored by git.
 ## 6. Optional parts
 
 - **AppImage:** `bash build.sh && bash packaging/appimage-sharun.sh` makes
-  `dist/GODZILLA-gzport-x86_64.AppImage`, one file for any distribution and the Steam Deck. Do not
-  publish an AppImage built in a folder that holds your dump or saves: check what it contains.
+  `dist/GODZILLA-gzport-x86_64.AppImage`, one file for any distribution and the Steam Deck. Build
+  it on Arch Linux with `vulkan-radeon`, `vulkan-intel` and `vulkan-tools`: it carries the build
+  PC's libraries, so a system compiled for its own CPU (Gentoo's `-march=native`) makes one that
+  crashes on other CPUs. FSR 4's assets go in only with `BB_APPIMAGE_FSR4=1` (for your own use;
+  published AppImages leave them out). Do not publish an AppImage built in a folder that holds
+  your dump or saves: check what it contains.
 - **DLSS** (GeForce RTX, NVIDIA driver): `bash tools/build_dlss.sh` once after `build.sh`; it
   downloads what it needs from NVIDIA's DLSS SDK.
 - **FSR 4:** `bash tools/fetch_fsr4_assets.sh` downloads the FSR 4 asset set built from AMD's
