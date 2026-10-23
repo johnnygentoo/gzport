@@ -18,7 +18,7 @@ class ModTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.game = self.root / 'CUSA03173'
+        self.game = self.root / 'CUSA02046'
         self.assets = self.game / 'dvdroot_ps4' / 'chr'
         self.assets.mkdir(parents=True)
         (self.game / 'eboot.bin').write_bytes(b'original executable')
@@ -115,7 +115,7 @@ class ModTests(unittest.TestCase):
 
     def test_title_id_wrapped_mod_discovered(self):
         self.moddir.mkdir()
-        for name, title in (('Europe', 'CUSA03173'), ('US', 'CUSA00900')):
+        for name, title in (('Europe', 'CUSA99998'), ('US', 'CUSA02046')):
             (self.moddir / name / title / 'dvdroot_ps4').mkdir(parents=True)
         self.assertEqual(mods.discover(self.moddir), ['Europe', 'US'])
 
@@ -130,7 +130,7 @@ class ModTests(unittest.TestCase):
         self.assertEqual({p.name for p in result.iterdir()}, {'dvdroot_ps4', 'eboot.bin'})
 
     def test_wrapped_and_bare_layouts(self):
-        layouts = {'Title': 'CUSA03173/dvdroot_ps4/chr', 'Archive': 'Archive v1.2/dvdroot_ps4/chr',
+        layouts = {'Title': 'CUSA02046/dvdroot_ps4/chr', 'Archive': 'Archive v1.2/dvdroot_ps4/chr',
                    'Bare': 'chr', 'Nested': 'Nested/app0/dvdroot_ps4/chr'}
         for name, path in layouts.items():
             folder = self.moddir / name / path

@@ -37,11 +37,11 @@ VertexRange IndexedRange(std::span<const Index, Extent> indices, int32_t base_ve
     return {uint32_t(int64_t(lo) + base_vertex), hi - lo + 1};
 }
 
-// Vertex shader constant buffers (stride 16) of Bloodborne's G-buffer shaders: the 864-byte
+// Vertex shader constant buffers (stride 16) of the built-in G-buffer shaders: the 864-byte
 // scene constants (camera), 416-byte model constants and palettes of 3x4 bone matrices
 // (48 bytes per bone). Characters have 656+ bytes; weapons and props 2-8 bones (96-384).
-// bbport: palettes of 16-64 KiB in whole bones (24576, 49152: 512-1024 bones, seen in Central
-// Yharnam where the large beasts smeared under FSR) are LargeSkeleton: gated like small ones
+// bbport: palettes of 16-64 KiB in whole bones (24576, 49152: 512-1024 bones, seen where large
+// creatures smeared under FSR) are LargeSkeleton: gated like small ones
 // (history only while the palette changes), since instance data of static props may look the
 // same. BB_MOTION_LARGE=0 leaves them to camera vectors as before.
 enum class BufferRole { Other, Skeleton, SmallSkeleton, LargeSkeleton };

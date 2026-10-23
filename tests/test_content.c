@@ -62,30 +62,30 @@ int main(int argc,char **argv) {
     assert(list(0,entries,2,&h.hits)==0 && h.hits==0);
     for (unsigned i=0;i<sizeof(entries);++i) assert(entries[i]==0xaa);
     assert((uint32_t)list(0,NULL,0,NULL)==0x80d90002);
-    /* <user>/addcont/<title>/<label>: reported installed (The Old Hunters' entitlement). */
+    /* <user>/addcont/<title>/<label>: reported installed (an add-on's entitlement). */
     char path[160];
     snprintf(path,sizeof(path),"%s/addcont",user_dir); assert(!mkdir(path,0755));
-    snprintf(path,sizeof(path),"%s/addcont/CUSA00900",user_dir); assert(!mkdir(path,0755));
-    snprintf(path,sizeof(path),"%s/addcont/CUSA00900/SPEXPANSIONDLC03",user_dir); assert(!mkdir(path,0755));
+    snprintf(path,sizeof(path),"%s/addcont/CUSA02046",user_dir); assert(!mkdir(path,0755));
+    snprintf(path,sizeof(path),"%s/addcont/CUSA02046/TESTADDONLABEL01",user_dir); assert(!mkdir(path,0755));
     assert(list(0,NULL,0,&h.hits)==0 && h.hits==1);
     memset(entries,0xaa,sizeof(entries));
     assert(list(0,entries,2,&h.hits)==0 && h.hits==1);
-    assert(!strcmp((const char *)entries,"SPEXPANSIONDLC03"));
+    assert(!strcmp((const char *)entries,"TESTADDONLABEL01"));
     uint32_t status; memcpy(&status,entries+20,4); assert(status==4);
     for (unsigned i=24;i<sizeof(entries);++i) assert(entries[i]==0xaa);
     /* One label: installed with a key, any other not owned (GODZILLA's check at start). */
     Info info=GET(Info,"m47juOmH0VE#G#H"), key=GET(Info,"XTWR0UXvcgs#G#H");
     unsigned char one[24], k[16];
     memset(one,0xaa,sizeof(one)); memset(k,0xaa,sizeof(k));
-    assert(info(0,"SPEXPANSIONDLC03",one)==0 && !strcmp((const char *)one,"SPEXPANSIONDLC03"));
+    assert(info(0,"TESTADDONLABEL01",one)==0 && !strcmp((const char *)one,"TESTADDONLABEL01"));
     memcpy(&status,one+20,4); assert(status==4);
-    assert(key(0,"SPEXPANSIONDLC03",k)==0);
+    assert(key(0,"TESTADDONLABEL01",k)==0);
     for (unsigned i=0;i<sizeof(k);++i) assert(k[i]==0);
     assert((uint32_t)info(0,"PS4GODZILLADLC00",one)==0x80d90007);
     assert((uint32_t)key(0,"PS4GODZILLADLC00",k)==0x80d90007);
     assert((uint32_t)info(0,NULL,one)==0x80d90002 && (uint32_t)key(0,"X",NULL)==0x80d90002);
     rmdir(path);
-    snprintf(path,sizeof(path),"%s/addcont/CUSA00900",user_dir); rmdir(path);
+    snprintf(path,sizeof(path),"%s/addcont/CUSA02046",user_dir); rmdir(path);
     snprintf(path,sizeof(path),"%s/addcont",user_dir); rmdir(path);
     rmdir(user_dir);
     assert(unload(0xb4)==0 && loaded(0xb4)==0);

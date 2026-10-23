@@ -26,21 +26,21 @@ class FlatpakSteamTests(unittest.TestCase):
 
     def test_flatpak_shortcut_runs_on_the_host(self):
         flatpak = steam.flatpak_data(self.home)
-        exe, start, options = steam.shortcut_command('/apps/Bloodborne.AppImage', '/apps', '--play', flatpak)
+        exe, start, options = steam.shortcut_command('/apps/GODZILLA.AppImage', '/apps', '--play', flatpak)
         self.assertEqual(exe, steam.SPAWN)
-        self.assertEqual(options, '--host --directory="/apps" "/apps/Bloodborne.AppImage" --play')
+        self.assertEqual(options, '--host --directory="/apps" "/apps/GODZILLA.AppImage" --play')
         self.assertEqual(steam.shortcut_command('/x/bb', '/x', '--play', self.home / 'Steam'),
                          ('/x/bb', '/x', '--play'))
 
     def test_other_launchers_flatpak_spawn_shortcuts_are_kept(self):
         vdf = self.home / 'shortcuts.vdf'
         steam.add_shortcut(vdf, 'Hades', steam.SPAWN, '/', '', '--host heroic --launch hades')
-        steam.add_shortcut(vdf, 'Bloodborne', steam.SPAWN, '/', '', '--host "/a/bb.AppImage" --play')
-        steam.add_shortcut(vdf, 'Bloodborne', steam.SPAWN, '/', '', '--host "/b/bb.AppImage" --play')
+        steam.add_shortcut(vdf, 'GODZILLA', steam.SPAWN, '/', '', '--host "/a/gz.AppImage" --play')
+        steam.add_shortcut(vdf, 'GODZILLA', steam.SPAWN, '/', '', '--host "/b/gz.AppImage" --play')
         entries = steam.parse(vdf.read_bytes())[0][0][2]
         fields = [{k: v for _t, k, v in e[2]} for e in entries]
-        self.assertEqual([f['AppName'] for f in fields], ['Hades', 'Bloodborne'])
-        self.assertEqual(fields[1]['LaunchOptions'], '--host "/b/bb.AppImage" --play')
+        self.assertEqual([f['AppName'] for f in fields], ['Hades', 'GODZILLA'])
+        self.assertEqual(fields[1]['LaunchOptions'], '--host "/b/gz.AppImage" --play')
 
     def test_spawn_permission_is_read_from_flatpak_info(self):
         def run(output):

@@ -217,7 +217,7 @@ uintptr_t runtime_resolve(const char *name, int is_data) {
         if (runtime_nid_is(name,"ZT4ODD2Ts9o#libSceLibcInternal")) return (uintptr_t)&need_libc_internal;
         return 0;
     }
-    /* Exact scoped imports for CUSA03173; the suffix identifies library/module. */
+    /* Scoped imports; only the NID is compared, the #library#module suffix is informational. */
     if (runtime_nid_is(name,"bzQExy189ZI#q#q")) return (uintptr_t)init_env;
     if (runtime_nid_is(name,"8G2LB+A3rzg#q#q")) return (uintptr_t)guest_atexit;
     if (runtime_nid_is(name,"tsvEmnenz48#q#q")) return (uintptr_t)guest_cxa_atexit;
@@ -279,7 +279,7 @@ static const struct { const char *nid, *symbol; } import_names[]={
 };
 /* Symbol name for a scoped NID ("NID#lib#module"), or NULL when no supported game imports it.
  * The NID alone decides: it is a hash of the symbol name, while the library and module letters
- * are indices into each executable's own tables (Bloodborne's libc is #q#q, GODZILLA's #Bi#q). */
+ * are indices into each executable's own tables (libc is #q#q in one game, #Bi#q in GODZILLA). */
 const char *runtime_symbol(const char *nid) {
     size_t length=strcspn(nid,"#");
     for (size_t i=0;i<sizeof(import_names)/sizeof(*import_names);++i)

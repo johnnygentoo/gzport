@@ -31,7 +31,7 @@ def content_root(folder):
     """(root, prefix): where a mod's files are and the game path they go to, or None.
 
     Accepted layouts: <mod>/dvdroot_ps4, <mod>/app0/dvdroot_ps4, <mod>/<title ID>/dvdroot_ps4
-    (CUSA03173, CUSA00900, ... whichever release the mod was made with), one wrapper folder
+    (whichever release the mod was made with), one wrapper folder
     around any of these (an archive extracted into a folder of its name), and the game's folders
     without dvdroot_ps4 (<mod>/chr, <mod>/parts, ...)."""
     folder = Path(folder)
@@ -174,7 +174,7 @@ def main():
     parser.add_argument('--mods-dir', required=True, type=Path)
     parser.add_argument('--config', type=Path)
     parser.add_argument('--enabled', choices=('0', '1'), default='1')
-    # Folders laid under the mods (Bloodborne's button prompts and gestures menu once), each a folder,
+    # Folders laid under the mods (the port's own menu files, none for GODZILLA), each a folder,
     # os.pathsep-separated: settings of their own, so laid first and kept with mods switched off.
     parser.add_argument('--ui-mods', default='')
     args = parser.parse_args()

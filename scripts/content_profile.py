@@ -1,8 +1,8 @@
 """Prepare explicit offline AppContent metadata; SKU is a probe setting, not a license check.
 
-USER_DEFINED_PARAM_1 is Bloodborne's region: 2 the Americas (msg/na: Latin American Spanish), 13
-Europe (msg/eu: Spanish from Spain). --region eu|na sets it for this launch (BB_REGION, the
-launcher's Region), whatever the dump's param.sfo says."""
+The four USER_DEFINED_PARAM values come from the dump's param.sfo. --region eu|na (BB_REGION) sets
+USER_DEFINED_PARAM_1, the region value a game may read (2 the Americas, 13 Europe), for this
+launch, whatever the dump's param.sfo says."""
 import argparse
 import json
 import struct

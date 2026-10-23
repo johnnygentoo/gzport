@@ -4,7 +4,7 @@
  * Colours come from the desktop theme's legacy names (theme_bg_color, theme_fg_color), which
  * libadwaita defines itself and a custom theme's gtk.css redefines: a themed desktop gets cards,
  * switches and buttons in its own palette instead of libadwaita's greys and blue (with the
- * JohnnyCyan theme: cyan on navy, as the Bloodborne launcher). */
+ * JohnnyCyan theme: cyan on navy). */
 :root {
     --window-bg-color: @theme_bg_color;
     --window-fg-color: @theme_fg_color;

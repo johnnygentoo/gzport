@@ -191,7 +191,7 @@ def external_patches(directory, app_version=APP_VERSION, exclude=BUILTIN_XML):
     directory=Path(directory)
     for path in sorted(directory.glob('*.xml')) if directory.is_dir() else []:
         # The built-in file, and copies of it in another patches folder (an older package's): those
-        # applied its frame-rate patches over the port's own (from Awaken's BloodBorneButPc).
+        # would apply its patches a second time over the port's own.
         if path.resolve()==Path(exclude).resolve() or path.name.lower()==Path(exclude).name.lower(): continue
         try:
             root=ET.parse(path).getroot()

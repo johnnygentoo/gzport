@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// The type 0 header Bloodborne left in a command buffer on an RX 6700 XT (log of 2026-10-08):
+// The type 0 header a game left in a command buffer on an RX 6700 XT (log of 2026-10-08):
 // the GPU thread stepped over it and the draw preparation scanner stopped, so no prepared draw
 // was used for the rest of the session. Both now skip by ResyncSkip.
 #include <cassert>

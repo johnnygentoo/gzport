@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Adds the GODZILLA launcher to the application menu (~/.local/share/applications) for this
 # checkout, with its icon in the user's icon theme (hicolor: launcher/godzilla.svg and PNGs of it,
-# named io.github.gzport.Launcher). A Bloodborne launcher's entry (io.github.bbport.Launcher) is
-# left alone.
+# named io.github.gzport.Launcher). A bbport launcher's entry (io.github.bbport.Launcher) is left
+# alone.
 set -euo pipefail
 here=$(cd -- "$(dirname -- "$0")" && pwd)
 data=${XDG_DATA_HOME:-$HOME/.local/share}

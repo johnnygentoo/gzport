@@ -77,7 +77,7 @@ public:
     void RecordMotion(vk::ImageView depth_view, vk::ImageView motion_view, u32 width, u32 height);
 
     /// A bound constant buffer of a scene pass draw: the scene camera when it is one (the game
-    /// profile's layout, or Bloodborne's 864-byte scene constants).
+    /// profile's layout, or the built-in 864-byte scene constants).
     void OnConstantBuffer(const float* data, u64 size) {
         const Game::UpscalerHooks* hooks = Game::Upscaler();
         if (hooks && hooks->camera) {
@@ -159,7 +159,7 @@ private:
     float gbuffer_x_sign = 1.0f; ///< bbport: signs of the G-buffer viewport scales (OnGBufferPass)
     float gbuffer_y_sign = 1.0f;
     float gbuffer_z_scale = 1.0f, gbuffer_z_offset = 0.0f;
-    float far_plane = 3000.0f; ///< Bloodborne's; a profile's camera names its own
+    float far_plane = 3000.0f; ///< the built-in layout's; a profile's camera names its own
 
     vk::UniqueDescriptorSetLayout desc_layout;
     vk::UniquePipelineLayout pipeline_layout;

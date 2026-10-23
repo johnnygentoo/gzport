@@ -1,6 +1,4 @@
 #include "bbport_write_log.h"
-#include "bbport_game_menu.h"
-#include "bbport_gnm_hooks.h"
 // bbport: glue between the C loader and the vendored shadPS4 video core.
 #include "bbport_overlay.h"
 #include "bbport_settings.h"

@@ -122,10 +122,11 @@ set(COMMON
 file(GLOB AVPLAYER CONFIGURE_DEPENDS shadps4/core/libraries/avplayer/*.cpp)
 pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavformat libavcodec libavutil libswscale libswresample)
 file(GLOB SHIM_SOURCES CONFIGURE_DEPENDS shim/*.cpp shim/*/*.cpp)
+list(FILTER SHIM_SOURCES EXCLUDE REGEX "shim/bbport_(gnm_hooks|guest_hooks|game_menu)\\.cpp$")
 # The layer's own modules (independent of the shadPS4 code): layer/.
 file(GLOB LAYER_SOURCES CONFIGURE_DEPENDS layer/*.cpp)
 # Game profiles (what the translator knows about one game, out of its core): games/.
-file(GLOB GAME_SOURCES CONFIGURE_DEPENDS games/*.cpp)
+set(GAME_SOURCES games/game_profile.cpp games/godzilla.cpp)
 # The translator's own command processor (docs/TRANSLATOR_ARCHITECTURE.ru.md, step 2): cp/.
 file(GLOB CP_SOURCES CONFIGURE_DEPENDS cp/*.cpp)
 add_library(bbgpu SHARED ${VIDEO_CORE} ${RECOMPILER} ${COMMON} ${SHIM_SOURCES} ${LAYER_SOURCES} ${GAME_SOURCES} ${CP_SOURCES}

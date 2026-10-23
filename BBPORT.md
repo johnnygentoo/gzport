@@ -12,8 +12,6 @@ THIS PROJECT IS NOT RELATED TO SHADPS4. ALL QUESTIONS RELATED TO THIS PROJECT SH
 > This is the README of the original project (deadinside28/bloodborne_pc), kept for its
 > technical details. The fork's own README is [README.md](README.md).
 
-**English** · [Русский](BBPORT.ru.md)
-
 bbport is the counterpart of Wine + DXVK for a single game: *Bloodborne* for PlayStation 4
 (CUSA03173, game version 1.09) on an x86-64 Linux PC. The game's original executable runs
 directly on the PC:
@@ -141,8 +139,7 @@ the graphics side.
   descriptor tables (the constant engine's dumps) are read only by the translator, so the CPU
   performs them. The game's occlusion queries (~60 a frame) are
   Vulkan occlusion queries; predication, `COPY_DATA` and `COND_EXEC` are translated too (check:
-  `BB_PM4_SELFTEST=1`). Details:
-  [docs/EMULATION_REMOVAL_PLAN.ru.md](docs/EMULATION_REMOVAL_PLAN.ru.md), "Шаг 4" (Russian).
+  `BB_PM4_SELFTEST=1`). Details: bbport's `docs/EMULATION_REMOVAL_PLAN.ru.md`, "Шаг 4" (Russian).
 
 "Port" here means a build for this one game, not a rewrite of its source code, which the project
 neither has nor includes.

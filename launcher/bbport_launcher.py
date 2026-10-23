@@ -5,7 +5,7 @@
 Picks the game folder, edits the port's settings (bbport.ini: upscaler, preset, ...) and the
 start-up tweaks passed as environment variables to run.sh, starts and stops the game and shows
 its output. Launcher settings live in ~/.config/gzport-launcher/settings.json; the packaged
-port's data in ~/.local/share/gzport (BB_DATA_DIR). Nothing of a Bloodborne install
+port's data in ~/.local/share/gzport (BB_DATA_DIR). Nothing of a bbport install
 (bbport-launcher, ~/.local/share/bbport) is read or written.
 Texts: bbport_i18n (the Russian text is the key; English, Spanish, Italian, French, German,
 Brazilian Portuguese and Simplified Chinese).
@@ -384,8 +384,8 @@ def game_environment(s):
         env["BB_USER_DIR"] = s["user_dir"]
     if s.get("dlc_dir"):
         env["BB_DLC_DIR"] = str(Path(s["dlc_dir"]).expanduser())
-    # Loose-file mods (scripts/mods.py) replace files under Bloodborne's dvdroot_ps4; GODZILLA's
-    # files are .pac archives at the folder's root, so none are laid over the game.
+    # Loose-file mods (scripts/mods.py) replace single files of a game; GODZILLA's files are .pac
+    # archives at the folder's root, so none are laid over the game.
     env["BB_MODS_ENABLED"] = "0"
     env["BB_PATCHES_DIR"] = str(patches_dir(s))
     env["BB_PATCHES_CONFIG"] = str(DATA_DIR / "patches.json")

@@ -87,10 +87,26 @@ patches.json
 /mods/
 
 # ---- Local work ----
-# Agent worktrees, scratch helpers, inherited Bloodborne leftovers
+# Agent worktrees, scratch helpers
 /.claude/
 /scratch/
 /1060/
+
+# ---- Bloodborne leftovers kept only on this PC ----
+# bbport's co-op bridge, its co-op server guide and notes of bbport's first game
+/bbbridge/
+/BBPORT.ru.md
+/docs/SERVER.md
+/docs/EMULATION_REMOVAL_PLAN.ru.md
+# bbport's first game's profile, co-op helpers and code hooks (out of the build)
+/gpu/games/bloodborne.cpp
+/gpu/bbnet/include/core/bloodborne_re.h
+/gpu/shim/bbport_gnm_table.inc
+/gpu/shim/bbport_gnm_hooks.*
+/gpu/shim/bbport_guest_hooks.*
+/gpu/shim/bbport_game_menu.*
+/tools/re/gen_gnm_table.py
+/tools/re/gnm_names.txt
 /docs/savedata_route/
 /docs/route*.txt
 /docs/route_run.log

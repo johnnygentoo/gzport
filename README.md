@@ -7,7 +7,7 @@ Vulkan. It is not an emulator.
 gzport is built on [bloodborne_linux](https://github.com/ayozetr/bloodborne_linux), ayozetr's
 Linux fork of [bbport](https://github.com/deadinside28/bloodborne_pc), the native Bloodborne port
 by deadinside28. The runtime, the GPU translation, the upscalers and the launcher come from there;
-gzport points them at GODZILLA and drops what only Bloodborne had.
+gzport points them at GODZILLA and drops what GODZILLA does not use.
 
 > [!IMPORTANT]
 > **No game files are included, and none ever will be.** You need your own copy of GODZILLA, the
@@ -39,7 +39,7 @@ GeForce RTX 3050).
 
 ## What gzport adds to bbport
 
-The runtime implements the PS4 libraries GODZILLA uses that Bloodborne does not:
+The runtime implements the PS4 libraries GODZILLA uses that bbport never needed:
 
 - **libSceNgs2**, the PS4's audio renderer (`src/runtime_ngs2.c`): sampler, submixer and
   mastering racks, ATRAC9 (LibAtrac9) and PCM waveforms with their loops, streamed voice lines,
@@ -73,10 +73,10 @@ The runtime implements the PS4 libraries GODZILLA uses that Bloodborne does not:
   server of your own; the launcher's **Online** page holds the server and your account
   ([docs/LAN-VERSUS.md](docs/LAN-VERSUS.md)).
 
-Not carried over from bloodborne_linux: Bloodborne's online play (The Hunter's Dream, bbbridge), the
-cheats page, Bloodborne's button prompts and gestures menu, loose-file mods, the self-updater and
-Discord status with Yharnam's areas. Discord Rich Presence is still there, off: set `BB_DISCORD=1`
-and `BB_DISCORD_CLIENT_ID` (a Discord application of your own named GODZILLA) to turn it on.
+What only served bbport's first game (its online play, cheats, menu edits and loose-file
+mods) and the self-updater were not carried over. Discord Rich Presence is there, off: set
+`BB_DISCORD=1` and `BB_DISCORD_CLIENT_ID` (a Discord application of your own named GODZILLA) to
+turn it on.
 
 ## Requirements
 
@@ -120,7 +120,7 @@ In the launcher, choose your game folder (the one with `eboot.bin`) and press **
 launcher: `BB_GAME_DIR=/path/to/CUSA02046 bash run.sh`.
 
 The launcher keeps its settings in `~/.config/gzport-launcher`. From a checkout, saves, the shader
-cache and `bbport.ini` go to `user/` and the checkout itself; nothing of a Bloodborne install
+cache and `bbport.ini` go to `user/` and the checkout itself; nothing of a bbport install
 (`~/.config/bbport-launcher`, `~/.local/share/bbport`) is read or written.
 
 ### AppImage

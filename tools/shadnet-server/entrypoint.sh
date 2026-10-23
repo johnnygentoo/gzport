@@ -9,7 +9,7 @@ for file in worlds.cfg scoreboards.cfg; do
     [ -e "$file" ] || cp "/opt/shadnet/$file" .
 done
 if [ ! -e shadnet.cfg ]; then
-    # The first start writes the default configuration; then what co-op needs (docs/SERVER.md).
+    # The first start writes the default configuration; then what versus needs (docs/LAN-VERSUS.md).
     timeout 5 ./shadnet >/dev/null 2>&1 || true
     sed -i -e 's/^Host=.*/Host=0.0.0.0/' -e 's/^Matching2Enabled=.*/Matching2Enabled=true/' \
         -e 's/^StatsEnabled=.*/StatsEnabled=false/' shadnet.cfg

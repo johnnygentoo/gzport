@@ -7,7 +7,7 @@ cd -- "$(dirname -- "$0")/.."
 name=${1:?usage: tools/bench.sh NAME [ENV=VALUE...]}
 shift
 base=out/bench_${name}_$(date +%m%d_%H%M%S)
-env BB_GAME_DIR="${BB_GAME_DIR:-$PWD/../game_files/CUSA03173}" "$@" BB_FRAME_LOG="$PWD/$base.frames.csv" \
+env BB_GAME_DIR="${BB_GAME_DIR:-$PWD/../CUSA02046}" "$@" BB_FRAME_LOG="$PWD/$base.frames.csv" \
     tools/restart.sh > /dev/null || exit 1
 sleep "${HOLD:-60}"
 tools/stop_own.sh

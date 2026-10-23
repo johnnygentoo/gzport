@@ -11,11 +11,10 @@
 namespace Game {
 
 // One per game (games/<game>.cpp).
-extern const Profile BloodborneProfile;
 extern const Profile GodzillaProfile;
 
 namespace {
-constexpr std::array<const Profile*, 2> Profiles = {&BloodborneProfile, &GodzillaProfile};
+constexpr std::array<const Profile*, 1> Profiles = {&GodzillaProfile};
 std::atomic<const Profile*> active{nullptr};
 } // namespace
 

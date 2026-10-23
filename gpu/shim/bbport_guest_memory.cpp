@@ -513,8 +513,8 @@ bool PcModelGpu(const Vulkan::Instance& instance) {
         const char* any = std::getenv("BB_PC_MODEL_ANY_GPU");
         // AMD keeps the sparse arena, every other GPU gets the layer's memory module (no sparse
         // binding of the game's memory, see LayerMemory); BB_LAYER_MEMORY=1/0 by hand. On an
-        // RX 7800 XT the module was on par with the arena on a route in Yharnam, but in the
-        // Hunter's Dream it kept ~1 GB of the area's data out of VRAM (ranges with a few
+        // RX 7800 XT the module was on par with the arena on one route, but in another area
+        // it kept ~1 GB of the area's data out of VRAM (ranges with a few
         // unannounced blocks stay in place without volatile blocks): 100 FPS against ~200.
         layer_default.store(vendor == AmdVendor ? 0 : 1, std::memory_order_relaxed);
         if (LayerMemory()) {

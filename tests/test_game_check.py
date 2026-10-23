@@ -58,7 +58,7 @@ class GameCheckTests(unittest.TestCase):
         self.assertEqual(game_check.problem(self.game('CUSA02046', '01.01'))[0], 'wrong_eboot')
 
     def test_other_title(self):
-        self.assertEqual(game_check.problem(self.game('CUSA03173', '01.09'))[0], 'other_title')
+        self.assertEqual(game_check.problem(self.game('CUSA99999', '01.00'))[0], 'other_title')
 
     def test_unreadable_executable(self):
         self.assertEqual(game_check.problem(self.game('CUSA02046', '01.01', b'junk'))[0], 'unreadable')

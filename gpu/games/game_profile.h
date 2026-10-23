@@ -55,7 +55,7 @@ struct UpscalerHooks {
     /// the display pass reads later: that image is kept at the output size (a relay).
     std::uint64_t frame_copy_vertex_shader = 0;
     /// The stride of the vertex shaders' bone palettes (one matrix per bone): draws binding one
-    /// write object motion vectors. 0: Bloodborne's rule (16-byte rows, sized as its palettes).
+    /// write object motion vectors. 0: the built-in rule (16-byte rows, sized as its palettes).
     std::uint32_t bone_palette_stride = 0;
 };
 
@@ -74,12 +74,12 @@ struct Profile {
     /// reads on the CPU: its stores go through to the game's memory; 0 = none known.
     std::uint64_t buffer_copy_shader = 0;
     /// Edits to the game's code made once, before it runs (the image is still writable): hooks
-    /// at fixed addresses of one executable, such as Bloodborne's settings menu. nullptr = none.
+    /// at fixed addresses of one executable, such as a game's settings menu. nullptr = none.
     void (*patch_image)(unsigned char* image, std::uint64_t size) = nullptr;
     /// The game's malloc table in its libc.prx is where the heap watch expects it
-    /// (BbHeapSites: Bloodborne's link layout); off for other games.
+    /// (BbHeapSites: the link layout bbport was written for); off for other games.
     bool heap_watch = false;
-    /// The temporal upscalers' view of the frame; nullptr: Bloodborne's built-in one.
+    /// The temporal upscalers' view of the frame; nullptr: the built-in one (bbport's original).
     const UpscalerHooks* upscaler = nullptr;
 };
 
@@ -102,7 +102,7 @@ inline bool HeapWatch() {
     return profile && profile->heap_watch;
 }
 
-/// The active profile's upscaler hooks, or nullptr (Bloodborne's built-in ones, or none).
+/// The active profile's upscaler hooks, or nullptr (the built-in ones, or none).
 inline const UpscalerHooks* Upscaler() {
     const Profile* profile = Active();
     return profile ? profile->upscaler : nullptr;

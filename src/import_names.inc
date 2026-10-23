@@ -748,7 +748,7 @@
 {"ZT4ODD2Ts9o#libSceLibcInternal","Need_sceLibcInternal"},
 {"lbQKqsERhtE#libSceDiscMap","sceDiscMapIsRequestOnHDD"},
 {"ioKMruft1ek#libSceDiscMap","sceDiscMap_8A828CAEE7EDD5E9"},
-/* GODZILLA (CUSA02046 1.01) imports that Bloodborne does not have. */
+/* GODZILLA (CUSA02046 1.01) imports that the list above does not have. */
 {"m47juOmH0VE#G#H","sceAppContentGetAddcontInfo"},
 {"XTWR0UXvcgs#G#H","sceAppContentGetEntitlementKey"},
 {"2xxUtuC-RzE#F#G","sceScreenShotEnable"},

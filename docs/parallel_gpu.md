@@ -3,7 +3,7 @@
 Goal: remove the single-core bottleneck of the emulated GPU command processor
 (`shadPS4:GpuCommandProcessor`, ~100% of one core while the rest of the CPU idles).
 
-## Measurements (Bloodborne, Hunter's Nightmare, ~70 FPS, `BB_DCB_STATS=1`)
+## Measurements (bbport's first game, one busy area, ~70 FPS, `BB_DCB_STATS=1`)
 
 | | |
 |---|---|
@@ -57,7 +57,7 @@ Must scale down to the Steam Deck (4 cores / 8 threads): worker count follows
 
 ## Results
 
-Step 1 (draw preparation, 4 workers, toggle 8192), Hunter's Nightmare, same view:
+Step 1 (draw preparation, 4 workers, toggle 8192), same area, same view:
 71.5 FPS with prepared draws vs 64.1 without (+11.5%), identical screenshots.
 97–98% of direct draws use the prepared pipeline; each `bb:DrawPrep` worker ~10% of a core.
 The GPU thread is still ~90% busy: texture/buffer binding is the next target (step 2).
@@ -172,7 +172,7 @@ reduced-resolution proxies — all on shared mutable state.
 ## Engine short paths: investigation (2026-09-30, in progress)
 
 - The eboot has no symbols but links Sony's Gnmx (`sdk\target\src\gnmx\gfxcontext.cpp`,
-  `lwgfxcontext.cpp`); FromSoftware's Dantelion2 CoreGraphics2 sits on top; YEBIS does the
+  `lwgfxcontext.cpp`); the game's own engine sits on top, with middleware doing the
   post-processing.
 - `BB_BUFFER_STATS=1` (buffer_cache.cpp) prints buffer bindings per guest region every 5 s.
   Almost all traffic comes from the engine's frame ring, ~0x1043400000–0x1049xxxxxx inside the
@@ -218,7 +218,7 @@ State after this work, standing still, `BB_FPS_LIMIT=0`, FSR 4: 82–85 FPS; GPU
 ### Texture binding: repeated sets and the UpdateImage fast path
 
 - Measured and dropped: only ~13% of draws bind exactly the textures and samplers of the
-  previous draw in every stage (running through Yharnam), so skipping whole texture sets
+  previous draw in every stage (running through a level), so skipping whole texture sets
   would save at most ~3% of the GPU thread.
 - `TextureCache::UpdateImage` runs for every texture binding; for a clean, registered image
   already tracked and touched in this GC period it only took the texture-cache mutex (shared
@@ -253,7 +253,7 @@ tolerates small scene differences better than FPS):
 
 ## Second pass: where the GPU thread's time goes, and a texture helper (2026-09-30)
 
-Standing in Hunter's Nightmare, FSR 4, `BB_FPS_LIMIT=0`, ~85 FPS, ~1610 draws/frame.
+Standing in the same area, FSR 4, `BB_FPS_LIMIT=0`, ~85 FPS, ~1610 draws/frame.
 
 **On-CPU profile** (perf, direct children): `Draw` 74% — `BindResources` 32% (textures 16%,
 buffers 13%), `BeginRendering` 8%, `GetGraphicsPipeline` 5%, `BindVertexBuffers` 4.5%,
@@ -369,7 +369,7 @@ state.
   ring. `Frame stats` add a `Draw pipe` line: draws, drains that waited and why, stage A waiting,
   stage B busy.
 
-Results (Hunter's Nightmare, standing, FSR 4, `BB_FPS_LIMIT=0`, A/B in one run):
+Results (same area, standing, FSR 4, `BB_FPS_LIMIT=0`, A/B in one run):
 
 | | pipeline on | off |
 |---|---|---|
@@ -431,7 +431,7 @@ is mostly the GPU waiting for the CPU). Printed every 5 s, GPU ms per frame by l
 are written outside render passes (`radv_CmdWriteTimestamp2` crashed inside some) and only into
 the rasterizer's scheduler (the presenter has its own).
 
-Hunter's Nightmare, FSR 4 Ultra Performance, ~110 FPS (8.8 ms/frame):
+Same area, FSR 4 Ultra Performance, ~110 FPS (8.8 ms/frame):
 
 | label | ms/frame |
 |---|---|

@@ -13,6 +13,6 @@ env_args+=("$@")
 base=out/ab_${mode}_$(date +%m%d_%H%M%S)
 echo "Log: $base.log"
 env BB_FRAME_LOG="$PWD/$base.frames.csv" BB_FRAME_STATS=1 \
-    BB_GAME_DIR="${BB_GAME_DIR:-$PWD/../game_files/CUSA03173}" "${env_args[@]}" \
+    BB_GAME_DIR="${BB_GAME_DIR:-$PWD/../CUSA02046}" "${env_args[@]}" \
     bash run.sh > "$base.log" 2>&1
 echo "Done: $base.log"

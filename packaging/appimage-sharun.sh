@@ -6,8 +6,8 @@
 # other distributions too; build it on an up-to-date Arch Linux (or CachyOS) with the launcher's
 # dependencies installed. NVIDIA's driver comes from the host at run time.
 # Running it opens the launcher; `--play` starts the game with the launcher's saved settings.
-# Data (generated files, saves, bbport.ini): ~/.local/share/gzport (BB_DATA_DIR), apart from a
-# Bloodborne port's ~/.local/share/bbport.
+# Data (generated files, saves, bbport.ini): ~/.local/share/gzport (BB_DATA_DIR), apart from
+# bbport's own ~/.local/share/bbport.
 set -euo pipefail
 cd -- "$(dirname -- "$0")/.."
 [[ -f out/bb-probe && -f out/gpu/libbbgpu.so ]] || { echo 'Build first: bash build.sh' >&2; exit 1; }
@@ -44,12 +44,6 @@ cp run.sh "$d/"
 cp -r scripts patches fsr4_shaders launcher "$d/"
 mkdir -p "$d/tools"
 cp -r tools/fsr4cap "$d/tools/"
-# bbbridge (GPL-3.0-or-later): its licence and notices next to the port; its source is bbbridge/.
-if [[ -x out/bbbridge/bbbridge-cli ]]; then
-    install -Dm644 bbbridge/LICENSE "$d/bbbridge/LICENSE"
-    install -Dm644 bbbridge/README.md "$d/bbbridge/README.md"
-    install -Dm644 bbbridge/THIRD_PARTY_NOTICES.txt "$d/bbbridge/THIRD_PARTY_NOTICES.txt"
-fi
 find "$d" -name __pycache__ -type d -prune -exec rm -rf {} +
 ln -s ../../bin "$d/bin"
 
@@ -62,7 +56,6 @@ export PYTHON="$APPDIR/bin/python3"
 export BB_VULKANINFO="$APPDIR/bin/vulkaninfo"
 export BB_DLSS_DIR="$APPDIR/share/bbport/dlss"
 export BB_NET_MODULE="$APPDIR/share/bbport/net/libbbnet.so"
-[ -x "$APPDIR/bin/bbbridge-cli" ] && export BB_BRIDGE_CLI="$APPDIR/bin/bbbridge-cli"
 [ -x "$APPDIR/bin/pkgextract" ] && export BB_PKGEXTRACT="$APPDIR/bin/pkgextract"
 export BB_DATA_DIR="${BB_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/gzport}"
 mkdir -p "$BB_DATA_DIR"
@@ -91,7 +84,7 @@ fi
 
 # GTK, libadwaita and their typelibs are loaded by PyGObject at run time (not linked): named here.
 # So are Python's ssl and hashlib modules, which quick-sharun leaves out by default: the launcher's
-# connection test and scripts/online.py talk HTTPS to the co-op servers. Pillow (in site-packages,
+# connection test and the online module talk HTTPS to servers. Pillow (in site-packages,
 # copied with Python) is named too, for the libraries its modules link (keyboard prompts).
 pydyn=$(python3 -c 'import sysconfig; print(sysconfig.get_path("platstdlib"))')/lib-dynload
 pil=$(python3 -c 'import os, PIL; print(os.path.dirname(PIL.__file__))')
@@ -106,13 +99,10 @@ export OUTPUT_APPIMAGE=0
 # The online module (gpu/bbnet), when the build has it: named so that its libraries (protobuf,
 # OpenSSL, miniupnpc) come along; the runtime dlopens it at BB_NET_MODULE (below).
 net=$(ls "$root/out/gpu/libbbnet.so" 2>/dev/null || true)
-# The Hunter's Dream's bridge (bbbridge/, GPL-3.0-or-later), when the build has it: with libcurl and
-# OpenSSL, named here so that they come along.
-bridge=$(ls "$root/out/bbbridge/bbbridge-cli" 2>/dev/null || true)
 # Install from PKG (scripts/pkg_install.py): pkgextract (Unlicense), when the build has it.
 pkgextract=$(ls "$root/out/pkgextract/bin/pkgextract" 2>/dev/null || true)
 "$quick" \
-    "$root/out/bb-probe" "$root/out/bb-gpu-capabilities" ${net:+"$net"} ${bridge:+"$bridge"} ${pkgextract:+"$pkgextract"} \
+    "$root/out/bb-probe" "$root/out/bb-gpu-capabilities" ${net:+"$net"} ${pkgextract:+"$pkgextract"} \
     "$(command -v python3)" "$(command -v vulkaninfo)" \
     /usr/lib/libgtk-4.so* /usr/lib/libadwaita-1.so* /usr/lib/libgirepository-*.so* \
     "$pydyn"/_ssl.*.so "$pydyn"/_hashlib.*.so "$pil"/_imaging.*.so "$pil"/_imagingft.*.so

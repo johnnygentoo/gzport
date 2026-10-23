@@ -605,7 +605,7 @@ inline const char* MenuTranslation(MenuLanguage language, const char* english) {
       "Ragdoll-Physik wie in Dark Souls",
       "Física ragdoll de Dark Souls",
       "黑暗之魂的布娃娃物理"}},
-    // The game's System menu pages (bbport_game_menu.cpp).
+    // Pages of a game's own System menu (the port's settings).
     {"Display",
      {"Imagen",
       "Immagine",

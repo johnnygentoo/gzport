@@ -20,15 +20,31 @@ signaling) and sends the match over libSceRudp on a P2P socket (vport 778). Here
 
 ## Setup
 
-1. **The server**, on one always-on PC of the network. With Docker:
-   [tools/shadnet-server](../tools/shadnet-server) (the patch is applied in the image), and
-   [SERVER.md](SERVER.md) for the rest; `SHADNET_HOST` is the PC's LAN address. Without Docker,
-   build shadnet-p2p (Qt 6.8 or newer with qt6-httpserver and qt6-websockets: on Arch
-   `pacman -Syu qt6-httpserver qt6-websockets`), apply the patch, and in `shadnet.cfg` set
-   `Host` to the LAN address, `Matching2Enabled=true`, `StatsEnabled=false` and a
-   `RegistrationSecretKey`.
-2. **Accounts**, one per player:
-   `shadnet-sample <server> 31313 register <name> <password> <email> <secret key>`.
+1. **The server**, on one always-on PC of the network. With Docker, the image in
+   [tools/shadnet-server](../tools/shadnet-server) builds shadnet-p2p on Debian 13 (it needs Qt
+   6.8 or newer) and applies the patch:
+
+   ```sh
+   docker build -t gzport-shadnet tools/shadnet-server
+   docker run -d --name shadnet --restart unless-stopped --network host -v shadnet-data:/data \
+       -e SHADNET_HOST=<the PC's LAN address> -e SHADNET_REGISTRATION_KEY=<a signup code> \
+       gzport-shadnet
+   docker logs shadnet
+   ```
+
+   The log ends with the listeners on that address: TCP 31313 (sign-in and matchmaking), UDP
+   31314 (each player's address) and TCP 31315 (WebAPI). The configuration (`shadnet.cfg`) and
+   the accounts (`db/shadnet.db`) stay in the `shadnet-data` volume; to update the server,
+   `docker stop shadnet && docker rm shadnet`, build the image again and run the same
+   `docker run`. Without Docker, build shadnet-p2p (Qt 6.8 or newer with qt6-httpserver and
+   qt6-websockets: on Arch `pacman -Syu qt6-httpserver qt6-websockets`), apply the patch, and in
+   `shadnet.cfg` set `Host` to the LAN address, `Matching2Enabled=true`, `StatsEnabled=false`
+   and a `RegistrationSecretKey`. A firewall on the server must let the other PCs reach those
+   three ports.
+2. **Accounts**, one per player (a name of 3 to 16 letters, digits, `-` or `_`):
+   `shadnet-sample <server> 31313 register <name> <password> <email> <signup code>`; with Docker,
+   `docker exec shadnet shadnet-sample <server> 31313 register ...`. It answers
+   `Account created successfully.`, or `FAILED: Unauthorized` when the code is wrong.
 3. **Each PC** starts the game with:
 
    ```sh

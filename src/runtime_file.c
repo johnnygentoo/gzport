@@ -307,7 +307,7 @@ static int commit_file(const File *f) {
 }
 /* Discord Rich Presence (BB_PRESENCE_DIR, scripts/discord_presence.py): the area the player is in.
  * The game opens one MapStudio file per map it loads (map/mapstudio/m24_01_00_01.msb.dcx), the
- * player's own first and then the maps around it (Central Yharnam brings the Forbidden Woods): a
+ * player's own first and then the maps around it (one area brings its neighbours): a
  * map that opens 5 s or more after the previous one starts a new load, and its first map is the
  * area. BB_PRESENCE_DIR/area holds that map, "m24_01". */
 static void presence_map(const char *guest) {

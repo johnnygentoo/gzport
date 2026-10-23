@@ -28,7 +28,8 @@ int main(int argc, char** argv) {
     const auto device = instance.GetDevice();
     Scheduler scheduler(instance);
     constexpr u32 Page = 65536, Pages = 3, Bytes = Page * Pages;
-    // Bloodborne's buffer copy shader (games/bloodborne.cpp): its stores also update the guest bytes.
+    // A game profile's buffer copy shader (Profile::buffer_copy_shader): its stores also update the
+    // guest bytes.
     constexpr u64 CopyShaderHash = 0xfefebf9f;
     struct Allocation { VkBuffer buffer{}; VmaAllocation memory{}; void* mapped{}; u64 bda{}; };
     std::array<Allocation, 6> allocations{};

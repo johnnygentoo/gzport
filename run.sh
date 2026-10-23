@@ -64,8 +64,7 @@ if [[ -z ${PYTHON:-} ]]; then echo 'Install Python 3 or set PYTHON.' >&2; exit 1
 game=${BB_GAME_DIR:-../CUSA02046}
 if [[ ! -f $game/eboot.bin ]]; then echo "No eboot.bin in $game (set BB_GAME_DIR)." >&2; exit 1; fi
 original_game=$game
-# Bloodborne's button prompts and gestures menu edited its dvdroot_ps4/menu files; GODZILLA has
-# none of them, so nothing is laid under the mods.
+# No menu files of the port are laid under the mods: GODZILLA needs none.
 ui_mods=
 game=$("$PYTHON" scripts/mods.py "$game" --out "$out" \
     --mods-dir "${BB_MODS_DIR:-$data/mods}" --config "${BB_MODS_CONFIG:-$data/mods.json}" \
@@ -90,8 +89,8 @@ print(sfo(open(sys.argv[1] + "/sce_sys/param.sfo", "rb").read()).get("TITLE_ID",
         ln -sfn "$(realpath "$BB_DLC_DIR")" "$addcont/$title"
     fi
 fi
-# BB_REGION=eu|na (the launcher's Region): the game's region for this launch, whatever the dump's
-# param.sfo says; it picks the regional text (Spanish from Spain or Latin American).
+# BB_REGION=eu|na: the region parameter (param.sfo's USER_DEFINED_PARAM_1) for this launch,
+# whatever the dump's param.sfo says (scripts/content_profile.py).
 "$PYTHON" scripts/content_profile.py "$game" --out "$out" --sku "${BB_CONTENT_SKU:-full}" --region "${BB_REGION:-}"
 # Sizes chosen below for the previous launch are recomputed after an in-game restart.
 if [[ ${BB_AUTO_RENDER_RES:-} == 1 ]]; then
@@ -239,9 +238,9 @@ else
     bash build.sh
     probe=${BB_PROBE:-out/bb-probe}  # BB_PROBE: a wrapper (gdb) around it
 fi
-# Online play (BB_ONLINE=1, launcher: Online; the online module gpu/bbnet): the game's own server
-# goes to the community server, summon signs to the shadNet WebAPI (scripts/online.py).
-if [[ ${BB_ONLINE:-0} == 1 && -f scripts/online.py ]]; then
+# Online play (BB_ONLINE=1, launcher: Online; the online module gpu/bbnet): GODZILLA's versus
+# through a shadNet server (docs/LAN-VERSUS.md, scripts/online.py).
+if [[ ${BB_ONLINE:-0} == 1 ]]; then
     export BB_SHADNET_SERVER=${BB_SHADNET_SERVER:-srv.shadps4.net:31313}
     # HTTPS needs CA certificates: OpenSSL from Nix looks only in its own store path (the
     # packaged wrapper brings a bundle; from source the system's is taken).
@@ -251,36 +250,9 @@ if [[ ${BB_ONLINE:-0} == 1 && -f scripts/online.py ]]; then
         done
     fi
     [[ -n ${BB_SHADNET_WEBAPI:-} ]] || export BB_SHADNET_WEBAPI=http://${BB_SHADNET_SERVER%:*}:31315
-    if [[ ${BB_BRIDGE:-0} == 1 ]]; then
-        # The Hunter's Dream (launcher: Online): bbbridge on this PC is the shadNet server
-        # (scripts/online.py). One already listening (a test, another launch) is used as it is;
-        # else bbbridge-cli runs for this launch and a watcher stops it once the game ($$, after the
-        # exec below) has ended.
-        bridge_cli=${BB_BRIDGE_CLI:-out/bbbridge/bbbridge-cli}
-        { read -r bridge_config; read -r SHADPS4_HTTP_HOST_OVERRIDES_JSON; } < <("$PYTHON" scripts/online.py bridge --user "${BB_USER_DIR:-$data/user}")
-        export SHADPS4_HTTP_HOST_OVERRIDES_JSON
-        bridge_up() { (exec 9<>/dev/tcp/127.0.0.1/31313) 2>/dev/null; }
-        if bridge_up; then
-            echo "Co-op: The Hunter's Dream as ${BB_SHADNET_NPID:-?}, through the bbbridge already running"
-        elif [[ ! -x $bridge_cli ]]; then
-            echo "STOP: The Hunter's Dream needs bbbridge-cli ($bridge_cli), not in this build" >&2; exit 1
-        else
-            bridge_log=${bridge_config%/*}/bbbridge.log
-            "$bridge_cli" --config "$bridge_config" --log "$bridge_log" </dev/null >/dev/null 2>&1 &
-            bridge_pid=$!
-            for _ in $(seq 100); do
-                bridge_up && break
-                kill -0 "$bridge_pid" 2>/dev/null || { echo "STOP: bbbridge stopped at start:" >&2; tail -5 "$bridge_log" >&2; exit 1; }
-                sleep 0.1
-            done
-            game_pid=$$
-            ( while kill -0 "$game_pid" 2>/dev/null; do sleep 2; done; kill -TERM "$bridge_pid" 2>/dev/null ) </dev/null >/dev/null 2>&1 &
-            echo "Co-op: The Hunter's Dream as ${BB_SHADNET_NPID:-?}, through bbbridge (log: $bridge_log)"
-        fi
-    else
-        SHADPS4_HTTP_HOST_OVERRIDES_JSON=$("$PYTHON" scripts/online.py overrides --user "${BB_USER_DIR:-$data/user}") || true
-        export SHADPS4_HTTP_HOST_OVERRIDES_JSON
-    fi
+    # Addresses a player redirects for the game's HTTP requests: DIR/host_overrides.custom.json.
+    overrides=${BB_USER_DIR:-$data/user}/host_overrides.custom.json
+    if [[ -f $overrides ]]; then export SHADPS4_HTTP_HOST_OVERRIDES_JSON=$overrides; fi
 fi
 # Trophies (scripts/trophies.py): the dump's list and icons in the user directory, for the
 # runtime's notices and the launcher; BB_TROPHY_KEY (the PS4's trophy key) decrypts the names.

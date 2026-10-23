@@ -11,7 +11,6 @@ class ActivityTests(unittest.TestCase):
         value = presence.activity(100)
         self.assertEqual(value['details'], 'GODZILLA')
         self.assertEqual(value['timestamps'], {'start': 100})
-        self.assertNotIn('Bloodborne', str(value))
 
 
 class ClientIdTests(unittest.TestCase):

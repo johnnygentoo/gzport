@@ -13,10 +13,10 @@ class ShaderCacheTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             user = Path(tmp)
             self.assertEqual(bbport_cache.size(user), 0)
-            game = user / 'cache' / 'CUSA00900'
+            game = user / 'cache' / 'CUSA02046'
             game.mkdir(parents=True)
             (game / 'a.spv').write_bytes(b'x' * 100)
-            (user / 'cache' / 'CUSA03173.zip').write_bytes(b'y' * 50)
+            (user / 'cache' / 'CUSA02046.zip').write_bytes(b'y' * 50)
             saves = user / 'savedata' / '1'
             saves.mkdir(parents=True)
             (saves / 'userdata0000').write_bytes(b'z' * 10)

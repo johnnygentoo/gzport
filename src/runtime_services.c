@@ -389,7 +389,7 @@ static ABI int32_t ime_term(void) { memset(&ime,0,sizeof(ime)); return 0; }
  * trophies.tsv lists the game's trophies (id, grade, hidden, name, detail, platinum), from the
  * dump; earned.tsv gets "id<TAB>Unix time" for each one the first time the game unlocks it. The
  * platinum, which the PS4 itself awards, follows once every trophy that counts toward it is
- * earned: the base game's, not an add-on's (Bloodborne's 34-39, The Old Hunters). */
+ * earned: the base game's, not an add-on's. */
 #define TROPHY_MAX 128
 typedef struct { char grade; char name[160]; } TrophyEntry;
 static pthread_mutex_t trophy_lock=PTHREAD_MUTEX_INITIALIZER;

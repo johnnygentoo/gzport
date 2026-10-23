@@ -7,59 +7,28 @@ import unittest
 import online
 
 
-class ServerChoiceTests(unittest.TestCase):
-    def test_kind_of_settings_from_before_the_choice(self):
-        self.assertEqual(online.server_kind({'online_server': online.SHADNET_SERVER}), 'public')
-        self.assertEqual(online.server_kind({'online_server': ''}), 'public')
-        self.assertEqual(online.server_kind({'online_server': '100.64.0.7:31313'}), 'own')
-        self.assertEqual(online.server_kind({'online_server_kind': 'public',
-                                             'online_server': '100.64.0.7:31313'}), 'public')
-
-    def test_one_account_for_each_kind_of_server(self):
-        settings = {'online_server_kind': 'own', 'online_npid': 'me', 'online_password': 'pw',
-                    'online_accounts': {'public': {'npid': 'pub', 'password': 'p2'}}}
-        self.assertEqual(online.account(settings, 'public'), ('pub', 'p2'))
-        # The chosen server's account from before online_accounts existed.
-        self.assertEqual(online.account(settings, 'own'), ('me', 'pw'))
-        old = {'online_server': online.SHADNET_SERVER, 'online_npid': 'me', 'online_password': 'pw'}
-        self.assertEqual(online.account(old, 'public'), ('me', 'pw'))
-        self.assertEqual(online.account(old, 'own'), ('', ''))
-
-    def test_public_server_ignores_the_own_server_fields(self):
-        server, webapi, community = online.addresses({
-            'online_server_kind': 'public', 'online_server': '100.64.0.7',
-            'online_webapi': 'http://100.64.0.7:9999', 'online_community': ''})
-        self.assertEqual((server, webapi, community), (online.SHADNET_SERVER,
-                                                       'http://srv.shadps4.net:31315',
-                                                       online.COMMUNITY_SERVER))
-
-    def test_own_server_gets_the_default_ports(self):
-        settings = {'online_server_kind': 'own', 'online_server': '100.64.0.7'}
-        self.assertEqual(online.addresses(settings)[:2],
-                         ('100.64.0.7:31313', 'http://100.64.0.7:31315'))
-        settings['online_webapi'] = 'http://100.64.0.7:8080'
-        self.assertEqual(online.addresses(settings)[1], 'http://100.64.0.7:8080')
-
-    def test_own_server_left_empty_is_the_public_one(self):
-        self.assertEqual(online.addresses({'online_server_kind': 'own', 'online_server': ''})[0],
-                         online.SHADNET_SERVER)
+class LanServerTests(unittest.TestCase):
+    def test_server_gets_the_default_port(self):
+        self.assertEqual(online.lan_server({'online_server': ' 192.168.1.20 '}), '192.168.1.20:31313')
+        self.assertEqual(online.lan_server({'online_server': '192.168.1.20:4000'}),
+                         '192.168.1.20:4000')
+        self.assertEqual(online.lan_server({'online_server': ''}), '')
 
     def test_environment(self):
-        env = online.environment({
-            'online_server_kind': 'own', 'online_server': '100.64.0.7', 'online_npid': ' Hunter ',
-            'online_password': 'secret', 'online_upnp': False, 'online_p2p_port': 3658,
-            'online_seamless': True})
-        self.assertEqual(env['BB_SHADNET_SERVER'], '100.64.0.7:31313')
-        self.assertEqual(env['BB_SHADNET_NPID'], 'Hunter')
+        env = online.lan_environment({
+            'online_server': '192.168.1.20', 'online_npid': ' Player ',
+            'online_password': 'secret', 'online_p2p_port': 4000})
+        self.assertEqual(env['BB_SHADNET_SERVER'], '192.168.1.20:31313')
+        self.assertEqual(env['BB_SHADNET_WEBAPI'], 'http://192.168.1.20:31315')
+        self.assertEqual(env['BB_SHADNET_NPID'], 'Player')
+        self.assertEqual(env['BB_USER_NAME'], 'Player')
         self.assertEqual(env['BB_UPNP'], '0')
-        self.assertEqual(env['SHADPS4_P2P_PORT'], '3658')
-        self.assertEqual(env['SHADPS4_BLOODBORNE_SEAMLESS_COOP'], '1')
+        self.assertEqual(env['SHADPS4_P2P_PORT'], '4000')
 
-    def test_random_port_and_seamless_only_with_an_own_server(self):
-        env = online.environment({'online_server_kind': 'public', 'online_p2p_port': 0,
-                                  'online_seamless': True})
-        self.assertNotIn('SHADPS4_P2P_PORT', env)
-        self.assertNotIn('SHADPS4_BLOODBORNE_SEAMLESS_COOP', env)
+    def test_port_out_of_range_is_the_default_one(self):
+        env = online.lan_environment({'online_server': '192.168.1.20', 'online_p2p_port': 70000})
+        self.assertEqual(env['SHADPS4_P2P_PORT'], str(online.LAN_P2P_PORT))
+        self.assertNotIn('BB_USER_NAME', env)
 
 
 class StunTests(unittest.TestCase):
@@ -134,24 +103,24 @@ class LoginTests(unittest.TestCase):
 
     def test_signed_in(self):
         port, received = self.serve(error=0, notify_first=True)
-        self.assertEqual(online.shadnet_login('127.0.0.1', port, 'hunter', 'secret'), (True, ''))
+        self.assertEqual(online.shadnet_login('127.0.0.1', port, 'player', 'secret'), (True, ''))
         kind, command, body = received[0]
         self.assertEqual((kind, command), (0, 0))
         request = body[4:]
         self.assertEqual(struct.unpack('<I', body[:4])[0], len(request))
-        self.assertTrue(request.startswith(b'\x0a\x06hunter\x12\x06secret'))
+        self.assertTrue(request.startswith(b'\x0a\x06player\x12\x06secret'))
 
     def test_wrong_password_and_already_signed_in(self):
         port, _ = self.serve(error=8)
-        self.assertEqual(online.shadnet_login('127.0.0.1', port, 'hunter', 'bad'),
+        self.assertEqual(online.shadnet_login('127.0.0.1', port, 'player', 'bad'),
                          (False, 'wrong name or password'))
         port, _ = self.serve(error=6)
-        self.assertEqual(online.shadnet_login('127.0.0.1', port, 'hunter', 'secret'),
+        self.assertEqual(online.shadnet_login('127.0.0.1', port, 'player', 'secret'),
                          (False, 'already signed in'))
 
     def test_another_protocol(self):
         port, _ = self.serve(version=2)
-        self.assertEqual(online.shadnet_login('127.0.0.1', port, 'hunter', 'secret'),
+        self.assertEqual(online.shadnet_login('127.0.0.1', port, 'player', 'secret'),
                          (False, 'protocol v2'))
 
 
