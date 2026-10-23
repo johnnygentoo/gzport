@@ -9,7 +9,7 @@ import unittest
 FORBIDDEN_NAMES = re.compile(
     r'(^|/)(eboot\.bin|param\.sfo|DATA\.BIN|icon0\.png|keystone|npbind\.dat|nptitle\.dat|'
     r'accounts\.txt|registration\.key|bbport\.ini|settings\.json|\.env)$'
-    r'|\.(elf|self|prx|sprx|sfo|trp|pac|at9|mp4|pkg|dcx|key|pem|p12)$'
+    r'|\.(elf|self|prx|sprx|sfo|trp|pac|at9|mp4|pkg|dcx|tpf|gfx|dds|key|pem|p12)$'
     r'|(^|/)(sce_sys|sce_module|savedata|SAVEDATA\d+|CUSA\d{5}[^/]*)/', re.IGNORECASE)
 # Content of PS4 files whatever their name: signed executable (SELF), PKG, param.sfo, PFS image.
 MAGICS = {b'\x4f\x15\x3d\x1d': 'PS4 signed executable (SELF)', b'\x7fCNT': 'PS4 package (PKG)',
@@ -59,7 +59,8 @@ class NoGameFilesTests(unittest.TestCase):
     def test_rules_catch_game_files(self):
         for name in ('CUSA02046/eboot.bin', 'game/sce_sys/param.sfo', 'x/voice_001.at9',
                      'user/savedata/1/CUSA02046/SAVEDATA00/DATA.BIN', 'ch03.mp4', 'a/b.pac',
-                     'sce_module/libc.prx', 'data/accounts.txt', 'bbport.ini', 'UP0700.pkg'):
+                     'sce_module/libc.prx', 'data/accounts.txt', 'bbport.ini', 'UP0700.pkg',
+                     'menu/atlas.dds', 'menu/common.tpf', 'menu/gesturetop.gfx'):
             self.assertTrue(FORBIDDEN_NAMES.search(name), name)
         for name in ('src/runtime_ngs2.c', 'launcher/godzilla.svg', 'docs/LAN-VERSUS.md',
                      'tools/shadnet-server/godzilla-versus.patch', 'patches/Godzilla.xml'):

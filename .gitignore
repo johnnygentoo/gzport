@@ -22,6 +22,10 @@ param.sfo
 *.mp4
 *.pkg
 *.dcx
+# Game textures and menus (also what mods ship of them)
+*.dds
+*.tpf
+*.gfx
 sce_sys/
 sce_module/
 # Archives of game or user files

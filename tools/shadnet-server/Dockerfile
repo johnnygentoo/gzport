@@ -1,12 +1,13 @@
-# A private shadNet server for Bloodborne co-op: Wozzardman/shadnet-p2p (GPL-2.0-or-later), the
-# shadNet server with its UDP port (STUN) and the Bloodborne summon broker. Debian 13 for Qt 6.8:
-# shadnet-p2p does not build with older Qt (Ubuntu 24.04 has 6.4). See docs/SERVER.md.
+# A private shadNet server for GODZILLA's versus over the LAN: Wozzardman/shadnet-p2p
+# (GPL-2.0-or-later) with its UDP port (STUN), and gzport's patch for the versus lobby. Debian 13
+# for Qt 6.8: shadnet-p2p does not build with older Qt (Ubuntu 24.04 has 6.4).
+# See docs/LAN-VERSUS.md.
 #
-#   docker build -t bbport-shadnet tools/shadnet-server
+#   docker build -t gzport-shadnet tools/shadnet-server
 #   docker run -d --name shadnet --restart unless-stopped -v shadnet-data:/data \
 #       -e SHADNET_REGISTRATION_KEY=<your signup code> \
 #       -p <address>:31313:31313/tcp -p <address>:31314:31314/udp -p <address>:31315:31315/tcp \
-#       bbport-shadnet
+#       gzport-shadnet
 FROM debian:trixie AS build
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates git cmake \
         ninja-build build-essential qt6-base-dev qt6-httpserver-dev qt6-websockets-dev \

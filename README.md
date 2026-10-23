@@ -172,8 +172,9 @@ commits are kept in this repository's history, under their own names.
 - **Supermedo** — [Supermedo/bloodborne_pc](https://github.com/Supermedo/bloodborne_pc): the
   Windows port, whose DLSS support and Add to Steam came to Linux in bloodborne_linux.
 - The other contributors to bbport and bloodborne_linux: **0xCydral**, **devilismyfriend**,
-  **artemkaVG**, **andrecabralgit** and **obrikash**, and the testers credited in the launcher's
-  **About** page (willthehuman, Joomzie, Kaka556Kevin, nr1971, segasonicye, Monochrome0907 and
+  **artemkaVG**, **andrecabralgit**, **obrikash**, **Mrsuss60** and **Jgamrot**, the co-authors
+  **Aryxa**, **AyrtonSanabio**, **emurphy04** and **Stefano Scalfari**, and the testers credited
+  in the launcher's **About** page (willthehuman, Joomzie, Kaka556Kevin, nr1971, segasonicye, Monochrome0907 and
   the others there).
 - [shadnet-p2p](https://github.com/Wozzardman/shadnet-p2p) by Wozzardman: the matchmaking server
   of versus over the LAN, and shadp2p (a shadPS4 fork) for the online module's network and PSN
