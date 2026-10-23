@@ -137,9 +137,9 @@ fi
 # headers went in. share/bbport/licenses, and dist/...-LICENSES.txt with all of them in one file.
 lic=$d/licenses
 mkdir -p "$lic/components" "$lic/system"
-cp LICENSE "$lic/gzport-LICENSE.txt"
+cp "$root/LICENSE" "$lic/gzport-LICENSE.txt"
 while read -r name file; do
-    cp "$file" "$lic/components/$name.txt"
+    cp "$root/$file" "$lic/components/$name.txt"
 done <<'LIST'
 shadPS4 gpu/shadps4/LICENSE
 FSR-Vulkan gpu/third_party/fsr-vulkan/LICENSE.txt
@@ -159,7 +159,7 @@ LIST
 for pair in AMD-GCN-headers:gpu/third_party/gcn/include/gcn/si_ci_vi_merged_offset.h \
             AMD-FSR1:gpu/shadps4/video_core/host_shaders/fsr/ffx_a.h \
             AMD-FSR-SDK-2.3:gpu/third_party/fsr-vulkan/upstream/ffx-2.3.0/Kits/FidelityFX/api/include/ffx_api_loader.h; do
-    awk '/^[[:space:]]*($|\/\/|\/\*|\*)/ {print; next} {exit}' "${pair#*:}" > "$lic/components/${pair%%:*}.txt"
+    awk '/^[[:space:]]*($|\/\/|\/\*|\*)/ {print; next} {exit}' "$root/${pair#*:}" > "$lic/components/${pair%%:*}.txt"
 done
 if command -v pacman >/dev/null; then
     # The packages owning the libraries quick-sharun collected (lib/ mirrors /usr/lib), the
