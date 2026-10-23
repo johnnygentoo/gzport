@@ -13,8 +13,8 @@ what changed. You also need your own dump of the game to play ([LEGAL.md](LEGAL.
   miniz, protobuf, nlohmann-json, OpenSSL, zlib, miniupnpc.
 - For the launcher: PyGObject with GTK 4 and libadwaita, and Pillow.
 - Fonts the game's text falls back to: Noto Sans and Noto Sans CJK, DejaVu.
-- Optional: Rust's `cargo` for the launcher's **Install from PKG** (without it the launcher only
-  takes a game folder); Qt 6.8+ with qt6-httpserver and qt6-websockets on the PC that hosts the
+- Optional: Rust 1.87 or newer with `cargo` for the launcher's **Install from PKG** (without it
+  the launcher only takes a game folder; an older Rust fails on `orbis-pfs`, then `rustup update`); Qt 6.8+ with qt6-httpserver and qt6-websockets on the PC that hosts the
   versus server ([docs/LAN-VERSUS.md](docs/LAN-VERSUS.md)).
 
 ### Arch Linux, CachyOS, Manjaro, EndeavourOS (tested)
